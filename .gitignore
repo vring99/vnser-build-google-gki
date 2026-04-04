@@ -1,9 +1,12 @@
 # Claude Code
 .claude/
 
+# Gemini
+.gemini/
+
 # Development files
 hympfs-dev.diff
-
+.gitignore
 # IDE & Editors
 .idea/
 .vscode/
@@ -60,3 +63,9 @@ node_modules/
 # Other
 .ace-tool/
 AGENTS.md
+web/serve.sh
+.omc/
+web/dist/
+wild_kernel_comparison.md
+action_build_comparison.md
+

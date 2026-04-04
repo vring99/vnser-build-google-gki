@@ -1,7 +1,7 @@
 <div align="center">
 
 # GKI KernelSU SUSFS
-# 🏮 2026 🐎 Happy New Year! 🏮
+### 🏮 2026 🐎 Happy New Year! 🏮
 
 **自动化构建 GKI 内核 | 集成 KernelSU + SUSFS**
 
@@ -20,20 +20,9 @@
 
 <table>
 <tr>
-<td align="center" width="50%">
-
-**📖 文档**
-
-[GitHub Wiki](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
-
-</td>
-<td align="center" width="50%">
-
-**📥 下载**
-
-[Releases](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-
-</td>
+<td align="center" width="33%">📖 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki">文档</a></b></td>
+<td align="center" width="34%">📥 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases">下载</a></b></td>
+<td align="center" width="33%">🔰 <b><a href="https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html">教程</a></b></td>
 </tr>
 </table>
 
@@ -43,7 +32,11 @@
 
 > **注意：** 目前不支持一加 ColorOS 14、15，刷入后可能需要清除数据开机。
 
-> 方向：可能会兼容几个特定的热门机型6.1-6.6机型进行更新，可到issues反馈
+> **ReSukiSU：ReSukiSU更新比SukiSU勤快，SukiSU报错就试试ReSukiSU**
+>
+> **默认变体已切换为 ReSukiSU**
+
+> **Android 16：已支持 Android 16 - 6.12 内核版本**
 
 
 ---
@@ -53,13 +46,11 @@
 详细说明请查阅 [**GitHub Wiki（中英双语）**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
 
 Wiki 涵盖内容：
+- [**🔰 教程**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 - 📥 下载/刷入内核
 - 💡 使用技巧 Tips
 - 🆘 救砖指南
 - 📊 内核版本兼容性说明
-- **🔧 [Fork 与自定义编译指南](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97)** - 学习如何 Fork 仓库并编译自己的内核
-- 🧩 自定义构建新手指南
-   - 你只需要查看 https://zzh20188.github.io/GKI_KernelSU_SUSFS/ ，找到你需要编译的内核的参数，Action处选择构建自定义版本的工作流填入即可。***此外这里还提供了自定义构建时间转换***
 
 ---
 
@@ -67,8 +58,8 @@ Wiki 涵盖内容：
 
 当以下两个分支的更新节奏不一致时，构建可能失败：
 
-- SukiSU builtin 分支：<https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin>
-- SUSFS gki-android14-6.1 分支：<https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads>
+- [SukiSU builtin 分支](https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin)
+- [SUSFS gki-android14-6.1 分支](https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads)
 
 例如：SUSFS 刚更新了新提交，但 SukiSU 的 `builtin` 分支还没跟进适配，这时打补丁/编译就容易失败。
 
@@ -91,8 +82,8 @@ Wiki 涵盖内容：
 
 **如何获取提交哈希？**
 
-- SUSFS: https://gitlab.com/simonpunk/susfs4ksu
-- SukiSU: https://github.com/SukiSU-Ultra/SukiSU-Ultra/commits/builtin/
+- SUSFS: [susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu)
+- SukiSU: [SukiSU-Ultra commits/builtin](https://github.com/SukiSU-Ultra/SukiSU-Ultra/commits/builtin/)
 
 以 SUSFS 为例，先选择分支，再复制对应提交的哈希值：
 
