@@ -747,12 +747,12 @@ jobs:
             patch -p1 --forward < "$ACTION_BUILD/patches/unicode_bypass_fix_6.1+.patch" || true
           fi
 
-      - name: 应用 SELinux 策略/上下文查询隐藏补丁
-        working-directory: ${{ env.KERNEL_ROOT }}/common
-        run: |
-          echo "正在应用 SELinux 策略/上下文查询隐藏补丁..."
-          wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/other_patch/70_selinux_hide_policy_query.patch -O 70_selinux_hide_policy_query.patch
-          patch -p1 -N -F 3 < 70_selinux_hide_policy_query.patch || true
+      #- name: 应用 SELinux 策略/上下文查询隐藏补丁
+      #  working-directory: ${{ env.KERNEL_ROOT }}/common
+      #  run: |
+      #    echo "正在应用 SELinux 策略/上下文查询隐藏补丁..."
+      #    wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/other_patch/70_selinux_hide_policy_query.patch -O 70_selinux_hide_policy_query.patch
+       #   patch -p1 -N -F 3 < 70_selinux_hide_policy_query.patch || true
           
 
       # ==================== 升级 LZ4 并应用 LZ4KD/LZ4K_OPLUS 补丁 ====================
