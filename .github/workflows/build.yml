@@ -750,7 +750,6 @@ jobs:
       - name: 应用 SELinux 策略/上下文查询隐藏补丁
         working-directory: ${{ env.KERNEL_ROOT }}/common
         run: |
-#          cd kernel_workspace
           echo "正在应用 SELinux 策略/上下文查询隐藏补丁..."
           wget https://github.com/$GITHUB_REPOSITORY/raw/refs/heads/$GITHUB_REF_NAME/other_patch/70_selinux_hide_policy_query.patch -O 70_selinux_hide_policy_query.patch
           patch -p1 -N -F 3 < 70_selinux_hide_policy_query.patch || true
