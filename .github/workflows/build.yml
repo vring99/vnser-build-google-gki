@@ -649,6 +649,10 @@ jobs:
 
             # Android 12 - 5.10 修复
             if [[ "${{ inputs.android_version }}" == "android12" && "${{ inputs.kernel_version }}" == "5.10" ]]; then
+          
+              if [[ "$CURRENT_SUB" == "226" ]]; then
+                 sed -i 's/vm_flags_clear(new_vma, VM_PAD_MASK);/new_vma->vm_flags \&= \~VM_PAD_MASK;/g' mm/mmap.c
+              fi
               if [[ "$CURRENT_SUB" -le 209 ]]; then
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
               fi
