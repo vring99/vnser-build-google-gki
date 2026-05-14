@@ -942,6 +942,14 @@ jobs:
           CONFIG_KSU=y
           CONFIG_TMPFS_XATTR=y
           CONFIG_TMPFS_POSIX_ACL=y
+          CONFIG_CFG80211=y
+          CONFIG_MAC80211=y
+          CONFIG_RFKILL=y
+          CONFIG_CRYPTO_LIB_ARC4=y
+          CONFIG_NL80211_TESTMODE=y
+          CONFIG_CFG80211_REQUIRE_SIGNED_REGDB=y
+          CONFIG_CFG80211_USE_KERNEL_REGDB_KEYS=y
+          CONFIG_CFG80211_DEFAULT_PS=n
           EOF
 
           if [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
