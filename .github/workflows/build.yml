@@ -178,7 +178,7 @@ jobs:
       - name: 安装编译依赖
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves
+          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves  clang lld llvm
           execute_install_scripts: true
 
       # ==================== 配置 ccache ====================
@@ -1072,7 +1072,7 @@ jobs:
             
               if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
                 echo "6.12 使用 make 方式编译 Image，避免 Bazel trim/module_outs 影响"
-                cd "$KERNEL_ROOT/common"
+                cd "common"
             
                 make -j$(nproc --all) LLVM=1 ARCH=arm64 \
                 CROSS_COMPILE=aarch64-linux-gnu- \
