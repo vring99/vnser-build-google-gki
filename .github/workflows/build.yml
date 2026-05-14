@@ -745,7 +745,27 @@ jobs:
               #  sed -i '/#include <linux\/dma-buf.h>/a #include <linux\/susfs_def.h>' ./fs/proc/base.c
               #  sed -i '/#include <linux\/dma-buf.h>/a #if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)' ./fs/proc/base.c
               #fi
-          
+  
+              echo "===== 1. 报错位置 ====="
+              grep -n "SUSFS_IS_INODE_SUS_MAP" mm/memory.c
+              
+              echo "===== 2. 宏定义在哪 ====="
+              grep -R "define SUSFS_IS_INODE_SUS_MAP" -n include fs mm kernel 2>/dev/null || true
+              
+              echo "===== 3. susfs 相关头文件 ====="
+              find include -iname "*susfs*" -o -iname "*ksu*" | sort
+              
+              echo "===== 4. memory.c include 区域 ====="
+              sed -n '1,80p' mm/memory.c
+              
+              echo "===== 5. susfs_def.h 内容相关 ====="
+              grep -n "SUSFS_IS_INODE_SUS_MAP\|SUS_MAP\|sus_map" include/linux/susfs_def.h 2>/dev/null || true
+              
+              echo "===== 6. Kconfig 配置项 ====="
+              grep -R "CONFIG_KSU_SUSFS_SUS_MAP\|KSU_SUSFS_SUS_MAP" -n . 2>/dev/null | head -50
+              
+              echo "===== 7. 当前编译配置 ====="
+              find out* -name ".config" -print -exec grep -n "KSU_SUSFS\|SUSFS" {} \; 2>/dev/null
               #if [[ "$CURRENT_SUB" -le 58 ]]; then
               #  cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
               #  patch -p1 < task_mmu.c.patch || true
