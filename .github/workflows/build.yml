@@ -953,6 +953,42 @@ jobs:
           fi
 
           sed -i 's/check_defconfig//' ./common/build.config.gki
+          python3 - <<'PY'
+          from pathlib import Path
+          
+          p = Path("common/BUILD.bazel")
+          s = p.read_text()
+          
+          mods = [
+          '        "lib/crypto/libarc4.ko",',
+          '        "net/rfkill/rfkill.ko",',
+          '        "net/wireless/cfg80211.ko",',
+          '        "net/mac80211/mac80211.ko",',
+          ]
+          
+          key = '    module_outs = ['
+          idx = s.find(key)
+          if idx == -1:
+            raise SystemExit("找不到 module_outs")
+          
+          start = idx + len(key)
+          end = s.find("    ]", start)
+          if end == -1:
+            raise SystemExit("找不到 module_outs 结束")
+          
+          block = s[start:end]
+          missing = [m for m in mods if m not in block]
+          
+          if missing:
+            s = s[:end] + "\n" + "\n".join(missing) + s[end:]
+            p.write_text(s)
+            print("已添加 WiFi module_outs:")
+            print("\n".join(missing))
+          else:
+            print("WiFi module_outs 已存在")
+          PY
+          
+          grep -nE "libarc4|rfkill|cfg80211|mac80211" common/BUILD.bazel
 
       - name: 添加 SUSFS 配置
         if: inputs.enable_susfs
