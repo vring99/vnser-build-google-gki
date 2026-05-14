@@ -1069,23 +1069,45 @@ jobs:
             if [ -f "build/build.sh" ]; then
               LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
             else
-              # 提取 gki_defconfig 修改到 fragment，避免 bazel trim 检查失败
-              FRAG="common/arch/arm64/configs/ksu.fragment"
-              diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
-              cp "$DEFCONFIG.orig" "$DEFCONFIG"
-              echo "=== KSU Fragment 内容 ==="
-              cat "$FRAG"
-              echo "========================="
-              FRAG_FLAG=""
-              if [ -s "$FRAG" ]; then
-                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
-              fi
-              LTO_FLAG="--lto=thin"
+            
               if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
-                LTO_FLAG="--lto=none"
+                echo "6.12 使用 make 方式编译 Image，避免 Bazel trim/module_outs 影响"
+                cd "$KERNEL_ROOT/common"
+            
+                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
+                CROSS_COMPILE=aarch64-linux-gnu- \
+                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
+                O=out gki_defconfig
+            
+                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
+                CROSS_COMPILE=aarch64-linux-gnu- \
+                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
+                O=out Image
+            
+                strings ./out/arch/arm64/boot/Image | grep 'Linux version'
+              else
+                FRAG="common/arch/arm64/configs/ksu.fragment"
+                diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
+                cp "$DEFCONFIG.orig" "$DEFCONFIG"
+                
+                echo "=== KSU Fragment 内容 ==="
+                cat "$FRAG"
+                echo "========================="
+                
+                FRAG_FLAG=""
+                if [ -s "$FRAG" ]; then
+                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
+                fi
+                
+                LTO_FLAG="--lto=thin"
+                
+                tools/bazel build --disk_cache=/home/runner/.cache/bazel \
+                --config=fast $LTO_FLAG $FRAG_FLAG \
+                //common:kernel_aarch64_dist || exit 1
+                
+                strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
               fi
-              tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $FRAG_FLAG //common:kernel_aarch64_dist || exit 1
-              strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
+            
             fi
 
             echo "当前 KSU 最新提交日期: ${KSU_LATEST_COMMIT_DATE}"
