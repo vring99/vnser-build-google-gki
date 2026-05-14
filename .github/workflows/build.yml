@@ -745,48 +745,17 @@ jobs:
               #  sed -i '/#include <linux\/dma-buf.h>/a #include <linux\/susfs_def.h>' ./fs/proc/base.c
               #  sed -i '/#include <linux\/dma-buf.h>/a #if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)' ./fs/proc/base.c
               #fi
+          
+              if [[ "$CURRENT_SUB" -le 58 ]]; then
+                #cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
+                #patch -p1 < task_mmu.c.patch || true
+                # memory.c
+                sed -i '/#include <linux\/sched\/sysctl.h>/a \
+                #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux/susfs_def.h>\n#endif' mm/memory.c
   
-              echo "===== A. 报错代码附近 ====="
-              sed -n '6148,6170p' mm/memory.c
-              
-              echo
-              echo "===== B. memory.c 是否引入 susfs_def.h ====="
-              grep -n "susfs_def.h\|susfs.h" mm/memory.c || echo "memory.c 没有引入 susfs 头文件"
-              
-              echo
-              echo "===== C. 宏定义位置 ====="
-              grep -R "define SUSFS_IS_INODE_SUS_MAP" -n include fs mm kernel 2>/dev/null || echo "没找到宏定义"
-              
-              echo
-              echo "===== D. susfs_def.h 宏内容 ====="
-              sed -n '95,120p' include/linux/susfs_def.h 2>/dev/null || echo "没有 include/linux/susfs_def.h"
-              
-              echo
-              echo "===== E. memory.c include 前 120 行 ====="
-              sed -n '1,120p' mm/memory.c
-              
-              echo
-              echo "===== F. patch 是否包含 memory.c 的 susfs_def.h ====="
-              grep -n "mm/memory.c\|susfs_def.h\|SUSFS_IS_INODE_SUS_MAP" 50_add_susfs_in_gki-android15-6.6.patch | head -80
-              
-              echo
-              echo "===== G. rej 文件 ====="
-              find . -name "*.rej" -print -exec sh -c 'echo "--- $1 ---"; cat "$1"' sh {} \;
-              
-              echo
-              echo "===== H. 当前配置 ====="
-              find . -path "*/.config" -print -exec grep -n "KSU_SUSFS\|SUSFS" {} \; 2>/dev/null
-              
-              echo
-              echo "===== I. 判断结论 ====="
-              if grep -q "SUSFS_IS_INODE_SUS_MAP" mm/memory.c; then
-              if grep -q "susfs_def.h" mm/memory.c; then
-              echo "memory.c 已引入 susfs_def.h，若还报错，可能 include 条件不对或宏被 #ifdef 包住。"
-              else
-              echo "memory.c 使用了 SUSFS_IS_INODE_SUS_MAP，但没有 include <linux/susfs_def.h>，这就是当前错误原因。"
-              fi
-              else
-              echo "memory.c 没有使用 SUSFS_IS_INODE_SUS_MAP。"
+                # fs/proc/base.c
+                sed -i '/#include <linux\/dma-buf.h>/a \
+                #if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)\n#include <linux/susfs_def.h>\n#endif' fs/proc/base.c
               fi
             fi
 
