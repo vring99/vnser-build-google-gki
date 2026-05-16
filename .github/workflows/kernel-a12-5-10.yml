@@ -61,7 +61,7 @@ on:
         description: "编译Ak3"
         required: true
         type: boolean
-        default: true
+        default: false
 
   workflow_call:
     inputs:
