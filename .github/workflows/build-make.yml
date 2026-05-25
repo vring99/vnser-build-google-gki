@@ -290,6 +290,7 @@ jobs:
         run: |
           KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
           echo "下载 6.12 common 源码: android.googlesource.com/kernel/common.git ${KERNEL_SOURCE_BRANCH}..."
+          echo "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz"
           rm -rf common common.tar.gz
           curl -L "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz" -o common.tar.gz
           mkdir -p common
