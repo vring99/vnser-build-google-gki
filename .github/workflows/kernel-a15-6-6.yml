@@ -40,7 +40,7 @@ on:
         description: "启用 ZRAM 增强算法"
         required: true
         type: boolean
-        default: true
+        default: false
       use_bbg:
         description: "启用 BBG 防格机"
         required: true
@@ -60,7 +60,7 @@ on:
         description: "启用一加 8E 支持"
         required: false
         type: boolean
-        default: false
+        default: true
       onlyAk3:
         description: "编译Ak3"
         required: true
