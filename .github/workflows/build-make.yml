@@ -1082,7 +1082,10 @@ jobs:
             export CCACHE_COMPILERCHECK="none"
 
             cd common
-            [ -f "./_setup_env.sh" ] && source "./_setup_env.sh" || true
+            #KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+            KERNEL_SOURCE_BRANCH="android16-6.12-2025-06"
+            curl -L "https://raw.githubusercontent.com/cctv18/android_gki_kernel_common/refs/heads/android16-6.12-2025-06/_setup_env.sh" -o ./_setup_env.sh || true
+            source "./_setup_env.sh" 2>/dev/null || true
 
             COMMON_REAL_PATH=$(pwd -P)
             ROOT_REAL_PATH=$(dirname "$COMMON_REAL_PATH")
