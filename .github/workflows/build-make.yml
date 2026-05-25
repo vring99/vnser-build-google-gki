@@ -527,11 +527,11 @@ jobs:
               ;;
             "ReSukiSU")
               echo "添加 ReSukiSU..."
-              curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s 16d2976e
+              curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash $BRANCH
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
               cd ./KernelSU
               # 生成自定义版本号（基于提交计数）, 失败时使用 114514
-              KSU_VERSION=$(expr $(git rev-list --count 16d2976e) + 30700 2>/dev/null || echo 114514)
+              KSU_VERSION=$(expr $(git rev-list --count main) + 30700 2>/dev/null || echo 114514)
               cd ../
               # 存储版本号到 GitHub 环境变量
               echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
