@@ -178,7 +178,7 @@ jobs:
       - name: 安装编译依赖
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves
+          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev libdw-dev dwarves
           execute_install_scripts: true
 
       # ==================== 配置 ccache ====================
