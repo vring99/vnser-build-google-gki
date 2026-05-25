@@ -258,7 +258,7 @@ jobs:
           if [[ "${{ inputs.android_version }}" == "android16" && "${{ inputs.kernel_version }}" == "6.12" ]]; then
             echo "下载 6.12 common 源码: cctv18/android_gki_kernel_common android16-6.12-2025-06..."
             rm -rf common common.zip android_gki_kernel_common-android16-6.12-2025-06
-            curl -L https://github.com/cctv18/android_gki_kernel_common/archive/refs/heads/android16-6.12-2025-06.zip -o common.zip
+            #curl -L https://github.com/cctv18/android_gki_kernel_common/archive/refs/heads/android16-6.12-2025-06.zip -o common.zip
             curl -L https://github.com/aosp-mirror/kernel_common/archive/refs/heads/android16-6.12-2025-06.zip -o common.zip
             # aria2c -s16 -x16 -k1M https://github.com/aosp-mirror/kernel_common/archive/refs/heads/android16-6.12.zip -o common.zip && 
             unzip -q common.zip
@@ -1200,10 +1200,10 @@ jobs:
           if [ -f "build/build.sh" ]; then
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
           else
-            sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
-            sed -i '/kmi_symbol_list_strict_mode/d' ./common/BUILD.bazel
+            [ -f ./common/BUILD.bazel ] && sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
+            [ -f ./common/BUILD.bazel ] && sed -i '/kmi_symbol_list_strict_mode/d' ./common/BUILD.bazel
             rm -rf ./common/android/abi_gki_protected_exports_*
-            sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
+            [ -f ./build/kernel/kleaf/impl/stamp.bzl ] && sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
           fi
 
           VERSION_INPUT=$(echo "${{ inputs.version }}" | tr -d '[:space:]')
