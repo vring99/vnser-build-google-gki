@@ -657,11 +657,11 @@ jobs:
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
               fi
               if [[ "$CURRENT_SUB" -le 117 ]]; then
-                cp $KERNEL_PATCHES/archived/wild/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
+                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
                 patch -p1 < fdinfo.c.patch || true
               fi
               if [[ "$CURRENT_SUB" -le 43 ]]; then
-                cp $KERNEL_PATCHES/archived/wild/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/base.c.patch ./
+                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/base.c.patch ./
                 patch -p1 < base.c.patch || true
               fi
             fi
