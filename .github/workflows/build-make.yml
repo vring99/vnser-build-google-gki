@@ -288,15 +288,13 @@ jobs:
       - name: 初始化并同步内核源码
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
-          # 克隆 GCC 工具链 (用于 5.x 内核)
-          git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-gnu-6.4.1.git gcc
-
-          echo "下载 6.12 common 源码: cctv18/android_gki_kernel_common android16-6.12-2025-06..."
-          rm -rf common common.zip android_gki_kernel_common-android16-6.12-2025-06
-          curl -L https://github.com/cctv18/android_gki_kernel_common/archive/refs/heads/android16-6.12-2025-06.zip -o common.zip
-          unzip -q common.zip
-          mv android_gki_kernel_common-android16-6.12-2025-06 common
-          rm -f common.zip
+          KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+          echo "下载 6.12 common 源码: android.googlesource.com/kernel/common.git ${KERNEL_SOURCE_BRANCH}..."
+          rm -rf common common.tar.gz
+          curl -L "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz" -o common.tar.gz
+          mkdir -p common
+          tar -xzf common.tar.gz -C common
+          rm -f common.tar.gz
           git -C common log -1 --oneline || true
 
           echo "下载 6.12 make 编译工具链..."
@@ -1084,8 +1082,7 @@ jobs:
             export CCACHE_COMPILERCHECK="none"
 
             cd common
-            curl -L https://raw.githubusercontent.com/cctv18/android_gki_kernel_common/refs/heads/android16-6.12-2025-06/_setup_env.sh -o ./_setup_env.sh || true
-            source "./_setup_env.sh" 2>/dev/null || true
+            [ -f "./_setup_env.sh" ] && source "./_setup_env.sh" || true
 
             COMMON_REAL_PATH=$(pwd -P)
             ROOT_REAL_PATH=$(dirname "$COMMON_REAL_PATH")
