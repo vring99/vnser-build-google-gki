@@ -178,7 +178,7 @@ jobs:
       - name: 安装编译依赖
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves  clang lld llvm
+          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev libdw-dev dwarves
           execute_install_scripts: true
 
       # ==================== 配置 ccache ====================
@@ -288,25 +288,26 @@ jobs:
       - name: 初始化并同步内核源码
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
-          # 克隆 GCC 工具链 (用于 5.x 内核)
-          git clone https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-gnu-6.4.1.git gcc
+          KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+          echo "下载 6.12 common 源码: android.googlesource.com/kernel/common.git ${KERNEL_SOURCE_BRANCH}..."
+          echo "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz"
+          rm -rf common common.tar.gz
+          curl -L "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz" -o common.tar.gz
+          mkdir -p common
+          tar -xzf common.tar.gz -C common
+          rm -f common.tar.gz
+          git -C common log -1 --oneline || true
 
-          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          echo "初始化 repo，分支: common-${FORMATTED_BRANCH}"
-
-          $REPO init --depth=1 -u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
-
-          # 检查是否为已弃用的分支
-          REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
-
-          if grep -q deprecated <<< $REMOTE_BRANCH; then
-            echo "检测到已弃用的分支: $FORMATTED_BRANCH"
-            sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
-          fi
-
-          $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
-          echo "REMOTE_BRANCH=$REMOTE_BRANCH" >> $GITHUB_ENV
+          echo "下载 6.12 make 编译工具链..."
+          rm -rf clang19 rust build-tools clang.zip rust.zip build-tools.zip
+          mkdir -p clang19 rust
+          curl -L https://github.com/cctv18/oneplus_sm8650_toolchain/releases/download/LLVM-Clang19-r536225/clang-r536225.zip -o clang.zip
+          unzip -q clang.zip -d clang19
+          curl -L https://github.com/cctv18/oneplus_sm8650_toolchain/releases/download/LLVM-Clang19-r536225/rust.zip -o rust.zip
+          unzip -q rust.zip -d rust
+          curl -L https://github.com/cctv18/oneplus_sm8650_toolchain/releases/download/LLVM-Clang19-r536225/build-tools.zip -o build-tools.zip
+          unzip -q build-tools.zip
+          rm -f clang.zip rust.zip build-tools.zip
           
           KERNEL_REPOS=""
           KERNEL_REPOS_PATH=$(find . -type f -name "build.config.msm.common" | head -n 1)
@@ -605,7 +606,7 @@ jobs:
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
           echo "应用 SUSFS 补丁..."
-          SUSFS_VERSION="2.1.0"
+          SUSFS_VERSION="2.0.0"
 
           # 复制 SUSFS 基础文件
           cp $SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch ./common/
@@ -657,11 +658,11 @@ jobs:
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
               fi
               if [[ "$CURRENT_SUB" -le 117 ]]; then
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
                 patch -p1 < fdinfo.c.patch || true
               fi
               if [[ "$CURRENT_SUB" -le 43 ]]; then
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/base.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/base.c.patch ./
                 patch -p1 < base.c.patch || true
               fi
             fi
@@ -673,11 +674,11 @@ jobs:
                 sed -i 's/vm_flags_clear(new_vma, VM_PAD_MASK);/new_vma->vm_flags \&= ~VM_PAD_MASK;/' ./mm/mmap.c
               fi
               if [[ "$CURRENT_SUB" -le 41 ]]; then
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/namespace.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/namespace.c.patch ./
                 patch -p1 < namespace.c.patch || true
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/fdinfo.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/fdinfo.c.patch ./
                 patch -p1 < fdinfo.c.patch || true
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/open.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a13-5.15/open.c.patch ./
                 patch -p1 < open.c.patch || true
               fi
               if [[ "$CURRENT_SUB" -le 148 && "${{ inputs.os_patch_level }}" != "2024-05" ]]; then
@@ -688,7 +689,7 @@ jobs:
             # Android 14 - 6.1 修复
             if [[ "${{ inputs.android_version }}" == "android14" && "${{ inputs.kernel_version }}" == "6.1" ]]; then
               if [[ "$CURRENT_SUB" -le 141 || "$CURRENT_SUB" -ge 145 ]]; then
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a14-6.1/base.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a14-6.1/base.c.patch ./
                 patch -p1 < base.c.patch || true
               fi
               if grep -q 'susfs_is_current_proc_umounted\|SUSFS_IS_INODE_SUS_MAP\|SUSFS_IS_INODE_OPEN_REDIRECT' ./fs/proc/base.c && ! grep -qF '#include <linux/susfs_def.h>' ./fs/proc/base.c; then
@@ -715,7 +716,7 @@ jobs:
             # Android 15 - 6.6 修复
             if [[ "${{ inputs.android_version }}" == "android15" && "${{ inputs.kernel_version }}" == "6.6" ]]; then
               if [[ "$CURRENT_SUB" -ge 98 ]]; then
-                cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/base.c.patch ./
+                cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/base.c.patch ./
                 patch -p1 < base.c.patch || true
               fi
           
@@ -747,7 +748,7 @@ jobs:
               #fi
           
               if [[ "$CURRENT_SUB" -le 58 ]]; then
-                #cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
+                #cp $KERNEL_PATCHES/wild/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/task_mmu.c.patch ./
                 #patch -p1 < task_mmu.c.patch || true
                 # memory.c
                 sed -i '/#include <linux\/sched\/sysctl.h>/a \
@@ -942,7 +943,6 @@ jobs:
           CONFIG_KSU=y
           CONFIG_TMPFS_XATTR=y
           CONFIG_TMPFS_POSIX_ACL=y
-  
           EOF
 
           if [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
@@ -950,7 +950,6 @@ jobs:
           fi
 
           sed -i 's/check_defconfig//' ./common/build.config.gki
-         
 
       - name: 添加 SUSFS 配置
         if: inputs.enable_susfs
@@ -972,15 +971,10 @@ jobs:
       - name: 配置内核名称
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
-          if [ -f "build/build.sh" ]; then
-            sed -i 's/-dirty//' ./common/scripts/setlocalversion
-          else
-            # 配置 6.1+ 内核
-            sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
-            sed -i '/kmi_symbol_list_strict_mode/d' ./common/BUILD.bazel
-            rm -rf ./common/android/abi_gki_protected_exports_*
-            sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
-          fi
+          [ -f ./common/BUILD.bazel ] && sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
+          [ -f ./common/BUILD.bazel ] && sed -i '/kmi_symbol_list_strict_mode/d' ./common/BUILD.bazel
+          rm -rf ./common/android/abi_gki_protected_exports_*
+          sed -i 's/-dirty//' ./common/scripts/setlocalversion
 
           VERSION_INPUT=$(echo "${{ inputs.version }}" | tr -d '[:space:]')
           if [ -n "$VERSION_INPUT" ]; then
@@ -988,7 +982,7 @@ jobs:
             perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${CLEAN_VERSION}"'"/s' ./common/scripts/setlocalversion 2>/dev/null || true
             sed -i "\$s|echo \"\$res\"|echo \"${CLEAN_VERSION}\"|" ./common/scripts/setlocalversion 2>/dev/null || true
             sed -i '/^CONFIG_LOCALVERSION=/ s/="\([^"]*\)"/="'"$CLEAN_VERSION"'"/' ./common/arch/arm64/configs/gki_defconfig
-          elif [ ! -f "build/build.sh" ]; then
+          else
             cd ./common
             BID="ab$((RANDOM % 90000000 + 10000000))"
             GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
@@ -1062,53 +1056,56 @@ jobs:
             set -ex
             cd "$KERNEL_ROOT"
 
-            sed -i 's/BUILD_SYSTEM_DLKM=1/BUILD_SYSTEM_DLKM=0/' ./common/build.config.gki.aarch64
-            sed -i '/MODULES_ORDER=android\/gki_aarch64_modules/d' ./common/build.config.gki.aarch64
-            sed -i '/KMI_SYMBOL_LIST_STRICT_MODE/d' ./common/build.config.gki.aarch64
+            export PATH="$KERNEL_ROOT/clang19/bin:$PATH"
+            export PATH="$KERNEL_ROOT/build-tools/bin:$PATH"
+            export PATH="$KERNEL_ROOT/rust/bin:$PATH"
+            export RUSTC="rustc"
+            export BINDGEN="bindgen"
+            export LIBCLANG_PATH="$KERNEL_ROOT/clang19/lib"
+            export LLVM=1 LLVM_IAS=1
+            export ARCH=arm64 SUBARCH=arm64
+            export CROSS_COMPILE=aarch64-linux-gnu-
+            export CC="clang"
+            export HOSTCC="clang"
+            export LD="ld.lld"
+            export HOSTLD="ld.lld"
+            export AR="llvm-ar"
+            export NM="llvm-nm"
+            export AS="clang"
+            export READELF="llvm-readelf"
+            export OBJCOPY="llvm-objcopy"
+            export OBJDUMP="llvm-objdump"
+            export OBJSIZE="llvm-size"
+            export STRIP="llvm-strip"
+            export CCACHE_BASEDIR="$GITHUB_WORKSPACE"
+            export CCACHE_NOHASHDIR="true"
+            export CCACHE_NOHARDLINK="true"
+            export CCACHE_COMPILERCHECK="none"
 
-            if [ -f "build/build.sh" ]; then
-              LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
-            else
-            
-              if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
-                echo "6.12 使用 make 方式编译 Image，避免 Bazel trim/module_outs 影响"
-                cd "common"
-            
-                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
-                CROSS_COMPILE=aarch64-linux-gnu- \
-                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
-                O=out gki_defconfig
-            
-                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
-                CROSS_COMPILE=aarch64-linux-gnu- \
-                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
-                O=out Image
-            
-                strings ./out/arch/arm64/boot/Image | grep 'Linux version'
-              else
-                FRAG="common/arch/arm64/configs/ksu.fragment"
-                diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
-                cp "$DEFCONFIG.orig" "$DEFCONFIG"
-                
-                echo "=== KSU Fragment 内容 ==="
-                cat "$FRAG"
-                echo "========================="
-                
-                FRAG_FLAG=""
-                if [ -s "$FRAG" ]; then
-                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
-                fi
-                
-                LTO_FLAG="--lto=thin"
-                
-                tools/bazel build --disk_cache=/home/runner/.cache/bazel \
-                --config=fast $LTO_FLAG $FRAG_FLAG \
-                //common:kernel_aarch64_dist || exit 1
-                
-                strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
-              fi
-            
-            fi
+            cd common
+            #KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
+            KERNEL_SOURCE_BRANCH="android16-6.12-2025-06"
+            curl -L "https://raw.githubusercontent.com/cctv18/android_gki_kernel_common/refs/heads/android16-6.12-2025-06/_setup_env.sh" -o ./_setup_env.sh || true
+            source "./_setup_env.sh" 2>/dev/null || true
+
+            COMMON_REAL_PATH=$(pwd -P)
+            ROOT_REAL_PATH=$(dirname "$COMMON_REAL_PATH")
+            KCFLAGS+=" -Wno-unused-command-line-argument"
+            KCFLAGS+=" -Wno-error=unused-command-line-argument"
+            KCFLAGS+=" -fdebug-prefix-map=$ROOT_REAL_PATH=."
+            KCFLAGS+=" -fmacro-prefix-map=$ROOT_REAL_PATH=."
+            KCFLAGS+=" -ffile-prefix-map=$ROOT_REAL_PATH=."
+            KCFLAGS+=" -no-canonical-prefixes"
+            KCFLAGS+=" -O2"
+            KCFLAGS+=" -pipe"
+            KCFLAGS+=" -Wno-error"
+            KCFLAGS+=" -fno-stack-protector"
+            KCFLAGS+=" -D__ANDROID_COMMON_KERNEL__"
+            export KCFLAGS
+
+            make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="clang" LD="ld.lld" OBJCOPY="llvm-objcopy" O=out gki_defconfig
+            make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" LD="ld.lld" OBJCOPY="llvm-objcopy" O=out Image
+            strings out/arch/arm64/boot/Image | grep 'Linux version'
 
             echo "当前 KSU 最新提交日期: ${KSU_LATEST_COMMIT_DATE}"
             echo "当前 SUSFS 最新提交日期: ${SUSFS_LATEST_COMMIT_DATE}"
@@ -1118,16 +1115,7 @@ jobs:
       - name: 应用 KPM 补丁 (SukiSU/ReSukiSU/Next)
         if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU' || inputs.ksu_variant == 'Next')
         run: |
-          case "${{ inputs.android_version }}" in
-            "android12"|"android13")
-              if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
-                TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-              fi
-              ;;
-            "android14"|"android15"|"android16")
-              TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/"
-              ;;
-          esac
+          TARGET_PATH="$KERNEL_ROOT/common/out/arch/arm64/boot"
 
           cp -r $SUKISU_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
           cd "$TARGET_PATH"
@@ -1142,16 +1130,12 @@ jobs:
         run: |
           mkdir -p bootimgs
 
-          if [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
-            SRC_DIR="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-          else
-            SRC_DIR="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
-          fi
+          SRC_DIR="$KERNEL_ROOT/common/out/arch/arm64/boot"
 
           cp "$SRC_DIR/Image" ./bootimgs/
-          cp "$SRC_DIR/Image.lz4" ./bootimgs/
+          [ -f "$SRC_DIR/Image.lz4" ] && cp "$SRC_DIR/Image.lz4" ./bootimgs/
           cp "$SRC_DIR/Image" ./
-          cp "$SRC_DIR/Image.lz4" ./
+          [ -f "$SRC_DIR/Image.lz4" ] && cp "$SRC_DIR/Image.lz4" ./
           gzip -n -k -f -9 ./Image > ./Image.gz
 
       # ==================== 创建 AnyKernel3 压缩包 ====================
