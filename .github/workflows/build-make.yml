@@ -429,7 +429,8 @@ jobs:
             "Stable(标准)")
               case "$variant_input" in
                 "Next") BRANCH="-s stable" ;;
-                "SukiSU"|"ReSukiSU") BRANCH="-s main" ;;
+                "SukiSU") BRANCH="-s main" ;;
+                "ReSukiSU") BRANCH="-s sync-upstream" ;;
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 *) BRANCH="-" ;;
               esac
