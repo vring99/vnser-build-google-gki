@@ -986,25 +986,42 @@ jobs:
             perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${CLEAN_VERSION}"'"/s' ./common/scripts/setlocalversion 2>/dev/null || true
             sed -i "\$s|echo \"\$res\"|echo \"${CLEAN_VERSION}\"|" ./common/scripts/setlocalversion 2>/dev/null || true
             sed -i '/^CONFIG_LOCALVERSION=/ s/="\([^"]*\)"/="'"$CLEAN_VERSION"'"/' ./common/arch/arm64/configs/gki_defconfig
-          elif [ ! -f "build/build.sh" ]; then
-            cd ./common
-            BID="ab$((RANDOM % 90000000 + 10000000))"
-            GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
-            case "${{ inputs.android_version }}-${{ inputs.kernel_version }}" in
-              "android14-6.1")  KMI_TAG="android14-11" ;;
-              "android15-6.6")  KMI_TAG="android15-8" ;;
-              "android16-6.12") KMI_TAG="android16-5" ;;
-              *) KMI_TAG="${{ inputs.android_version }}" ;;
+          else
+            if [ -f "build/build.sh" ]; then
+              SETLOCALVERSION="./common/scripts/setlocalversion"
+              DEFCONFIG_LOCAL="./common/arch/arm64/configs/gki_defconfig"
+              COMMON_DIR="./common"
+            else
+              SETLOCALVERSION="./common/scripts/setlocalversion"
+              DEFCONFIG_LOCAL="./common/arch/arm64/configs/gki_defconfig"
+              COMMON_DIR="./common"
+            fi
+
+            GHASH=$(git -C "$COMMON_DIR" rev-parse --verify HEAD | cut -c1-13)
+            case "${{ inputs.kernel_version }}" in
+              "5.10")
+                KERNEL_LOCAL="-android12-9-$(printf '%05d' $((RANDOM % 100000)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                ;;
+              "5.15")
+                KERNEL_LOCAL="-android13-8-$(printf '%05d' $((RANDOM % 100000)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                ;;
+              "6.1")
+                KERNEL_LOCAL="-android14-11-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                ;;
+              "6.6")
+                KERNEL_LOCAL="-android15-8-g${GHASH}-abogki$((RANDOM % 900000000 + 100000000))-4k"
+                ;;
+              "6.12")
+                KERNEL_LOCAL="-android16-5-g${GHASH}-abogki$((RANDOM % 900000000 + 100000000))-4k"
+                ;;
+              *)
+                KERNEL_LOCAL="-${{ inputs.android_version }}-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                ;;
             esac
 
-            if [ "${{ inputs.kernel_version }}" = "6.1" ]; then
-              KMI_LOCAL="-${KMI_TAG}-g${GHASH}-${BID}-4k"
-              sed -i "\$s|echo \"\$res\"|echo \"${KMI_LOCAL}\"|" ./scripts/setlocalversion 2>/dev/null || true
-              sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${KMI_LOCAL}\"/" ./arch/arm64/configs/gki_defconfig 2>/dev/null || true
-            else
-              SUFFIX="-${KMI_TAG}-g${GHASH}-${BID}"
-              perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${SUFFIX}"'\$\{config_localversion\}"/s' ./scripts/setlocalversion 2>/dev/null || true
-            fi
+            perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${KERNEL_LOCAL}"'"/s' "$SETLOCALVERSION" 2>/dev/null || true
+            sed -i "\$s|echo \"\$res\"|echo \"${KERNEL_LOCAL}\"|" "$SETLOCALVERSION" 2>/dev/null || true
+            sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${KERNEL_LOCAL}\"/" "$DEFCONFIG_LOCAL" 2>/dev/null || true
           fi
 
       # ==================== 自定义构建时间 ====================
