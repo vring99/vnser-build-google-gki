@@ -178,7 +178,7 @@ jobs:
       - name: 安装编译依赖
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves
+          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev dwarves  clang lld llvm
           execute_install_scripts: true
 
       # ==================== 配置 ccache ====================
@@ -428,7 +428,8 @@ jobs:
             "Stable(标准)")
               case "$variant_input" in
                 "Next") BRANCH="-s stable" ;;
-                "SukiSU"|"ReSukiSU") BRANCH="-s main" ;;
+                "SukiSU") BRANCH="-s main" ;;
+                "ReSukiSU") BRANCH="-s sync-upstream" ;;
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 *) BRANCH="-" ;;
               esac
@@ -529,7 +530,7 @@ jobs:
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
               cd ./KernelSU
               # 生成自定义版本号（基于提交计数）, 失败时使用 114514
-              KSU_VERSION=$(expr $(git rev-list --count main) + 30700 2>/dev/null || echo 114514)
+              KSU_VERSION=$(expr $(git rev-list --count sync-upstream) + 30700 2>/dev/null || echo 114514)
               cd ../
               # 存储版本号到 GitHub 环境变量
               echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
@@ -942,6 +943,7 @@ jobs:
           CONFIG_KSU=y
           CONFIG_TMPFS_XATTR=y
           CONFIG_TMPFS_POSIX_ACL=y
+  
           EOF
 
           if [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
@@ -949,6 +951,7 @@ jobs:
           fi
 
           sed -i 's/check_defconfig//' ./common/build.config.gki
+         
 
       - name: 添加 SUSFS 配置
         if: inputs.enable_susfs
@@ -1084,23 +1087,45 @@ jobs:
             if [ -f "build/build.sh" ]; then
               LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
             else
-              # 提取 gki_defconfig 修改到 fragment，避免 bazel trim 检查失败
-              FRAG="common/arch/arm64/configs/ksu.fragment"
-              diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
-              cp "$DEFCONFIG.orig" "$DEFCONFIG"
-              echo "=== KSU Fragment 内容 ==="
-              cat "$FRAG"
-              echo "========================="
-              FRAG_FLAG=""
-              if [ -s "$FRAG" ]; then
-                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
-              fi
-              LTO_FLAG="--lto=thin"
+            
               if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
-                LTO_FLAG="--lto=none"
+                echo "6.12 使用 make 方式编译 Image，避免 Bazel trim/module_outs 影响"
+                cd "common"
+            
+                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
+                CROSS_COMPILE=aarch64-linux-gnu- \
+                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
+                O=out gki_defconfig
+            
+                make -j$(nproc --all) LLVM=1 ARCH=arm64 \
+                CROSS_COMPILE=aarch64-linux-gnu- \
+                CC=clang LD=ld.lld OBJCOPY=llvm-objcopy \
+                O=out Image
+            
+                strings ./out/arch/arm64/boot/Image | grep 'Linux version'
+              else
+                FRAG="common/arch/arm64/configs/ksu.fragment"
+                diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
+                cp "$DEFCONFIG.orig" "$DEFCONFIG"
+                
+                echo "=== KSU Fragment 内容 ==="
+                cat "$FRAG"
+                echo "========================="
+                
+                FRAG_FLAG=""
+                if [ -s "$FRAG" ]; then
+                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
+                fi
+                
+                LTO_FLAG="--lto=thin"
+                
+                tools/bazel build --disk_cache=/home/runner/.cache/bazel \
+                --config=fast $LTO_FLAG $FRAG_FLAG \
+                //common:kernel_aarch64_dist || exit 1
+                
+                strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
               fi
-              tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $FRAG_FLAG //common:kernel_aarch64_dist || exit 1
-              strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
+            
             fi
 
             echo "当前 KSU 最新提交日期: ${KSU_LATEST_COMMIT_DATE}"
