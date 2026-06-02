@@ -429,7 +429,7 @@ jobs:
               case "$variant_input" in
                 "Next") BRANCH="-s stable" ;;
                 "SukiSU") BRANCH="-s main" ;;
-                "ReSukiSU") BRANCH="-s sync-upstream" ;;
+                "ReSukiSU") BRANCH="-s main" ;;
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 *) BRANCH="-" ;;
               esac
@@ -530,7 +530,7 @@ jobs:
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
               cd ./KernelSU
               # 生成自定义版本号（基于提交计数）, 失败时使用 114514
-              KSU_VERSION=$(expr $(git rev-list --count sync-upstream) + 30700 2>/dev/null || echo 114514)
+              KSU_VERSION=$(expr $(git rev-list --count main) + 30700 2>/dev/null || echo 114514)
               cd ../
               # 存储版本号到 GitHub 环境变量
               echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
