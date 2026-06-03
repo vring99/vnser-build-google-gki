@@ -988,10 +988,10 @@ jobs:
             GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
             case "${{ inputs.kernel_version }}" in
               "5.10")
-                KERNEL_LOCAL="-android12-9-$(printf '%05d' $((RANDOM % 100000)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                KERNEL_LOCAL="-android12-9-$(printf '%05d' $((RANDOM % 200)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
                 ;;
               "5.15")
-                KERNEL_LOCAL="-android13-8-$(printf '%05d' $((RANDOM % 100000)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
+                KERNEL_LOCAL="-android13-8-$(printf '%05d' $((RANDOM % 200)))-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
                 ;;
               "6.1")
                 KERNEL_LOCAL="-android14-11-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
