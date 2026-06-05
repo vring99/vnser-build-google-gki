@@ -1,4 +1,4 @@
-name: 内核构建 - Android 13 (5.15)
+name: 内核构建 - Android 12 (5.10)-1
 
 permissions:
   contents: write
@@ -56,11 +56,13 @@ on:
         required: true
         type: boolean
         default: false
+
       onlyAk3:
         description: "编译Ak3"
         required: true
         type: boolean
-        default: true
+        default: false
+
   workflow_call:
     inputs:
       kernelsu_variant:
@@ -95,65 +97,24 @@ on:
         default: false
 
 jobs:
-  build-kernels-a13-5-15:
-    name: "5.15.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
+  build-kernels-a12-5-10:
+    name: "5.10.${{ matrix.sub_level }}-${{ matrix.os_patch_level }}"
     strategy:
       fail-fast: false
       matrix:
         include:
 
 
-          - sub_level: "74"
-            os_patch_level: "2023-01"
-          - sub_level: "78"
-            os_patch_level: "2023-03"
-          - sub_level: "94"
-            os_patch_level: "2023-05"
-          - sub_level: "104"
-            os_patch_level: "2023-07"
-          - sub_level: "119"
-            os_patch_level: "2023-09"
-          - sub_level: "123"
-            os_patch_level: "2023-11"
-          - sub_level: "137"
-            os_patch_level: "2024-01"
-          - sub_level: "144"
-            os_patch_level: "2024-03"
-          - sub_level: "148"
-            os_patch_level: "2024-05"
-          - sub_level: "149"
-            os_patch_level: "2024-07"
-          - sub_level: "151"
-            os_patch_level: "2024-08"
-          - sub_level: "153"
-            os_patch_level: "2024-09"
-          - sub_level: "167"
-            os_patch_level: "2024-11"
-          - sub_level: "170"
-            os_patch_level: "2025-01"
-          - sub_level: "178"
-            os_patch_level: "2025-03"
-          - sub_level: "180"
-            os_patch_level: "2025-05"
-          - sub_level: "185"
-            os_patch_level: "2025-07"
-          - sub_level: "189"
-            os_patch_level: "2025-09"
-          - sub_level: "194"
-            os_patch_level: "2025-12"
-          - sub_level: "197"
-            os_patch_level: "2026-03"
-          - sub_level: "206"
-            os_patch_level: "2026-06"
-
-
+          - sub_level: "252"
+            os_patch_level: "2026-04"
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      android_version: "android13"
-      kernel_version: "5.15"
+      android_version: "android12"
+      kernel_version: "5.10"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
+      revision: ${{ matrix.revision }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version || '' }}
@@ -165,3 +126,11 @@ jobs:
       enable_susfs: ${{ !inputs.cancel_susfs }}
       onlyAk3: ${{ inputs.onlyAk3 || false }}
 
+  # 仅在直接触发时运行，从 main.yml 调用时跳过
+#  get-ksu-manager:
+#    if: ${{ !inputs.called_from_main }}
+#    uses: ./.github/workflows/get-manager.yml
+#    secrets: inherit
+#    with:
+#      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+  # 仅在直接触发时运行，从 main.yml 调用时跳过
