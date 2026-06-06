@@ -695,6 +695,15 @@ jobs:
                   sed -i '/#include "internal.h"/a \\n#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT\nextern bool susfs_is_current_ksu_domain(void);\nextern struct static_key_true susfs_is_sdcard_android_data_not_decrypted;\n\n#define CL_COPY_MNT_NS BIT(25)\n\n#endif' ./fs/namespace.c
                 fi
               fi
+              # 修复 5.15.197~5.15.206: task_mmu.c 使用 SUSFS_IS_INODE_* 宏但缺少 susfs_def.h
+              if [[ "$CURRENT_SUB" -ge 197 && "$CURRENT_SUB" -le 206 ]] && grep -q 'SUSFS_IS_INODE_SUS_MAP\|SUSFS_IS_INODE_OPEN_REDIRECT' ./fs/proc/task_mmu.c && ! grep -qF '#include <linux/susfs_def.h>' ./fs/proc/task_mmu.c; then
+                echo "检测到 5.15 task_mmu.c 缺少 susfs_def.h，注入声明..."
+                if grep -qF '#include <linux/sched/sysctl.h>' ./fs/proc/task_mmu.c; then
+                  sed -i '/#include <linux\/sched\/sysctl.h>/a #if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)\n#include <linux\/susfs_def.h>\n#endif' ./fs/proc/task_mmu.c
+                else
+                  sed -i '/#include <linux\/sched\/mm.h>/a #if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)\n#include <linux\/susfs_def.h>\n#endif' ./fs/proc/task_mmu.c
+                fi
+              fi
               if [[ "$CURRENT_SUB" -le 148 && "${{ inputs.os_patch_level }}" != "2024-05" ]]; then
                 sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
               fi
