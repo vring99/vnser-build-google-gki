@@ -719,6 +719,20 @@ jobs:
                 cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a15-6.6/base.c.patch ./
                 patch -p1 < base.c.patch || true
               fi
+
+              # 修复 6.6 LTS: SUSFS 补丁在 namespace.c 头部 hunk 失配，
+              # 导致 DEFAULT_KSU_MNT_ID / CL_COPY_MNT_NS 等符号未声明
+              if [[ "$CURRENT_SUB" -le 46 ]] && grep -q 'DEFAULT_KSU_MNT_ID\|VFSMOUNT_MNT_FLAGS_KSU_UNSHARED_MNT\|susfs_is_current_ksu_domain\|CL_COPY_MNT_NS' ./fs/namespace.c && ! grep -qF '#include <linux/susfs_def.h>' ./fs/namespace.c; then
+                echo "检测到 6.6 namespace.c 缺少 susfs_def.h，注入声明..."
+                if grep -qF '#include <linux/mnt_idmapping.h>' ./fs/namespace.c; then
+                  sed -i '/#include <linux\/mnt_idmapping.h>/a #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT\n#include <linux\/susfs_def.h>\n#endif' ./fs/namespace.c
+                else
+                  sed -i '/#include "internal.h"/i #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT\n#include <linux\/susfs_def.h>\n#endif\n' ./fs/namespace.c
+                fi
+                if ! grep -q 'extern bool susfs_is_current_ksu_domain' ./fs/namespace.c; then
+                  sed -i '/#include "internal.h"/a \\n#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT\nextern bool susfs_is_current_ksu_domain(void);\nextern struct static_key_true susfs_is_sdcard_android_data_not_decrypted;\n\n#define CL_COPY_MNT_NS BIT(25)\n\n#endif' ./fs/namespace.c
+                fi
+              fi
           
               # 修复 6.6.50~6.6.97: 缺少 susfs_def.h 导致编译报 undeclared identifier
               if grep -q 'AS_FLAGS_SUS_MAP\|susfs_is_current_proc_umounted' ./fs/proc/base.c && ! grep -qF 'susfs_def.h' ./fs/proc/base.c; then
