@@ -655,7 +655,8 @@ jobs:
                 sed -i 's/vm_flags_clear(new_vma, VM_PAD_MASK);/new_vma->vm_flags \&= ~VM_PAD_MASK;/' ./mm/mmap.c
               fi
               if [[ "$CURRENT_SUB" -le 209 ]]; then
-                sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+                # 5.10.209 及以下没有 VMA_PAD_START()，旧内核直接使用 VMA 末尾
+                sed -i -e 's/goto show_pad;/return 0;/' -e 's/VMA_PAD_START(vma)/vma->vm_end/g' ./fs/proc/task_mmu.c
               fi
               if [[ "$CURRENT_SUB" -le 117 ]]; then
                 cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
