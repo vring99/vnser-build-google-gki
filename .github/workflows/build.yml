@@ -661,6 +661,10 @@ jobs:
               if [[ "$CURRENT_SUB" -le 117 ]]; then
                 cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/fdinfo.c.patch ./
                 patch -p1 < fdinfo.c.patch || true
+                # 旧版 5.10 的 fdinfo.c 没有预先声明 mnt，补丁应用后会触发 undeclared identifier
+                if grep -qF 'mnt = real_mount(file->f_path.mnt);' ./fs/notify/fdinfo.c && ! grep -qF 'struct mount *mnt;' ./fs/notify/fdinfo.c; then
+                  sed -i '/mnt = real_mount(file->f_path.mnt);/i\	struct mount *mnt;' ./fs/notify/fdinfo.c
+                fi
               fi
               if [[ "$CURRENT_SUB" -le 43 ]]; then
                 cp $KERNEL_PATCHES/wild/archived/susfs_fix_patches/v${SUSFS_VERSION}/a12-5.10/base.c.patch ./
@@ -1168,28 +1172,7 @@ jobs:
             echo "当前 KSU 最新提交日期: ${KSU_LATEST_COMMIT_DATE}"
             echo "当前 SUSFS 最新提交日期: ${SUSFS_LATEST_COMMIT_DATE}"
             echo "如果日期不同或相差过远则补丁失效、编译失败"
-      # ==================== KPM 补丁 (仅 SukiSU) ====================
-      # 为 SukiSU 应用 KPM (Kernel Patch Module) 补丁
-      - name: 应用 KPM 补丁 (SukiSU/ReSukiSU/Next)
-        if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU' || inputs.ksu_variant == 'Next')
-        run: |
-          case "${{ inputs.android_version }}" in
-            "android12"|"android13")
-              if [ "${{ inputs.kernel_version }}" != "6.6" ]; then
-                TARGET_PATH="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
-              fi
-              ;;
-            "android14"|"android15"|"android16")
-              TARGET_PATH="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64/"
-              ;;
-          esac
-
-          cp -r $SUKISU_PATCHES/kpm/patch_linux "$TARGET_PATH/patch"
-          cd "$TARGET_PATH"
-          chmod 777 patch
-          ./patch
-          rm -rf Image
-          mv oImage Image
+ 
 
       # ==================== 准备 Boot 镜像 ====================
       # 复制编译产物到工作目录
