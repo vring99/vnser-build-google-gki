@@ -728,7 +728,8 @@ jobs:
                 fi
               fi
               if [[ "$CURRENT_SUB" -le 75 && "${{ inputs.os_patch_level }}" != "2024-05" ]]; then
-                sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+                # 6.1.75 及以下没有 VMA_PAD_START()，旧内核直接使用 VMA 末尾
+                sed -i -e 's/goto show_pad;/return 0;/' -e 's/VMA_PAD_START(vma)/vma->vm_end/g' ./fs/proc/task_mmu.c
               fi
               # 修复 6.1 LTS: SUSFS 补丁在 namespace.c 头部 hunk 因上下文不匹配而失败，
               # 导致函数体中的 SUSFS 符号（DEFAULT_KSU_MNT_ID 等）未声明
