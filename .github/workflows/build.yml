@@ -43,6 +43,10 @@ on:
       revision:
         required: false
         type: string
+      source_revision:
+        required: false
+        type: string
+        default: ''
       build_time:
         required: false
         type: string
@@ -296,9 +300,21 @@ jobs:
 
           $REPO init --depth=1 -u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
 
+          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
+          KERNEL_SOURCE_REVISION="${{ inputs.source_revision }}"
+          if [[ -n "$KERNEL_SOURCE_REVISION" ]]; then
+            KERNEL_SOURCE_TAG="${FORMATTED_BRANCH}_${KERNEL_SOURCE_REVISION}"
+            KERNEL_SOURCE_REF="refs/tags/${KERNEL_SOURCE_TAG}"
+            if git ls-remote --exit-code https://android.googlesource.com/kernel/common "${KERNEL_SOURCE_REF}" >/dev/null; then
+              echo "使用指定内核源码版本: ${KERNEL_SOURCE_TAG}"
+              sed -i "/<project path=\"common\" name=\"kernel\\/common\"/ s#revision=\"[^\"]*\"#revision=\"${KERNEL_SOURCE_REF}\"#" "$DEFAULT_MANIFEST_PATH"
+            else
+              echo "未找到 ${KERNEL_SOURCE_TAG}，继续使用源码分支: ${FORMATTED_BRANCH}"
+            fi
+          fi
+
           # 检查是否为已弃用的分支
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
-          DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
 
           if grep -q deprecated <<< $REMOTE_BRANCH; then
             echo "检测到已弃用的分支: $FORMATTED_BRANCH"

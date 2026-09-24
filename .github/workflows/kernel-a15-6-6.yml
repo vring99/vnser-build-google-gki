@@ -128,6 +128,7 @@ jobs:
             os_patch_level: "2025-06"
           - sub_level: "92"
             os_patch_level: "2025-07"
+            source_revision: "r21"
           - sub_level: "98"
             os_patch_level: "2025-09"
           - sub_level: "102"
@@ -143,6 +144,7 @@ jobs:
       kernel_version: "6.6"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
+      source_revision: ${{ matrix.source_revision }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version || '' }}

@@ -139,6 +139,7 @@ jobs:
             os_patch_level: "2025-06"
           - sub_level: "141"
             os_patch_level: "2025-07"
+            source_revision: "r13"
           - sub_level: "145"
             os_patch_level: "2025-09"
           - sub_level: "157"
@@ -152,6 +153,7 @@ jobs:
       kernel_version: "6.1"
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
+      source_revision: ${{ matrix.source_revision }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
       version: ${{ inputs.version || '' }}

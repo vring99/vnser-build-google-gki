@@ -43,6 +43,10 @@ on:
       revision:
         required: false
         type: string
+      source_revision:
+        required: false
+        type: string
+        default: ''
       build_time:
         required: false
         type: string
@@ -289,10 +293,21 @@ jobs:
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
           KERNEL_SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          echo "下载 6.12 common 源码: android.googlesource.com/kernel/common.git ${KERNEL_SOURCE_BRANCH}..."
-          echo "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz"
+          KERNEL_SOURCE_REVISION="${{ inputs.source_revision }}"
+          if [[ -n "$KERNEL_SOURCE_REVISION" ]]; then
+            KERNEL_SOURCE_TAG="${KERNEL_SOURCE_BRANCH}_${KERNEL_SOURCE_REVISION}"
+            KERNEL_SOURCE_REF="refs/tags/${KERNEL_SOURCE_TAG}"
+            if ! git ls-remote --exit-code https://android.googlesource.com/kernel/common "${KERNEL_SOURCE_REF}" >/dev/null; then
+              echo "未找到 ${KERNEL_SOURCE_TAG}，继续使用源码分支: ${KERNEL_SOURCE_BRANCH}"
+              KERNEL_SOURCE_REF="refs/heads/${KERNEL_SOURCE_BRANCH}"
+            fi
+          else
+            KERNEL_SOURCE_REF="refs/heads/${KERNEL_SOURCE_BRANCH}"
+          fi
+          echo "下载 common 源码: android.googlesource.com/kernel/common.git ${KERNEL_SOURCE_REF}..."
+          echo "https://android.googlesource.com/kernel/common.git/+archive/${KERNEL_SOURCE_REF}.tar.gz"
           rm -rf common common.tar.gz
-          curl -L "https://android.googlesource.com/kernel/common.git/+archive/refs/heads/${KERNEL_SOURCE_BRANCH}.tar.gz" -o common.tar.gz
+          curl -L "https://android.googlesource.com/kernel/common.git/+archive/${KERNEL_SOURCE_REF}.tar.gz" -o common.tar.gz
           mkdir -p common
           tar -xzf common.tar.gz -C common
           rm -f common.tar.gz
