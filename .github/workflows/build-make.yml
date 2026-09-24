@@ -712,7 +712,8 @@ jobs:
                 fi
               fi
               if [[ "$CURRENT_SUB" -le 148 && "${{ inputs.os_patch_level }}" != "2024-05" ]]; then
-                sed -i -e 's/goto show_pad;/return 0;/' ./fs/proc/task_mmu.c
+                # 5.15.148 及以下没有 VMA_PAD_START()，旧内核直接使用 VMA 末尾
+                sed -i -e 's/goto show_pad;/return 0;/' -e 's/VMA_PAD_START(vma)/vma->vm_end/g' ./fs/proc/task_mmu.c
               fi
             fi
 
@@ -988,10 +989,6 @@ jobs:
           CONFIG_TMPFS_XATTR=y
           CONFIG_TMPFS_POSIX_ACL=y
           EOF
-
-          if [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ]; then
-            echo "CONFIG_KPM=y" >> "$DEFCONFIG"
-          fi
 
           sed -i 's/check_defconfig//' ./common/build.config.gki
 
