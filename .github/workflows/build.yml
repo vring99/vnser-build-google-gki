@@ -88,6 +88,8 @@ jobs:
     # ==================== 环境变量配置 ====================
     # ccache 配置用于加速重复编译
     env:
+      # ReSukiSU 35188; pin both setup.sh and the kernel source.
+      RESUKISU_COMMIT: c4bdcaae023f8318e85b0782cf534fca4bc8aa62
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -484,6 +486,10 @@ jobs:
             fi
           fi
 
+          if [ "$variant_input" = "ReSukiSU" ]; then
+            BRANCH="-s $RESUKISU_COMMIT"
+          fi
+
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "KSU 分支: $BRANCH"
 
@@ -542,11 +548,17 @@ jobs:
               ;;
             "ReSukiSU")
               echo "添加 ReSukiSU..."
-              curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash $BRANCH
+              curl -fLSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/$RESUKISU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/resukisu-setup.sh"
+              bash "$RUNNER_TEMP/resukisu-setup.sh" "$RESUKISU_COMMIT"
+              if [ "$(git -C KernelSU rev-parse HEAD)" != "$RESUKISU_COMMIT" ]; then
+                echo "::error::ReSukiSU checkout does not match pinned commit $RESUKISU_COMMIT"
+                exit 1
+              fi
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
               cd ./KernelSU
-              # 生成自定义版本号（基于提交计数）, 失败时使用 114514
-              KSU_VERSION=$(expr $(git rev-list --count main) + 30700 2>/dev/null || echo 114514)
+              # 使用实际检出的提交计数，避免 main 更新导致产物版本号漂移
+              KSU_GIT_VERSION=$(git rev-list --count HEAD)
+              KSU_VERSION=$((KSU_GIT_VERSION + 30700))
               cd ../
               # 存储版本号到 GitHub 环境变量
               echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
