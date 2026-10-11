@@ -88,8 +88,8 @@ jobs:
     # ==================== 环境变量配置 ====================
     # ccache 配置用于加速重复编译
     env:
-      # ReSukiSU 35188; pin both setup.sh and the kernel source.
-      RESUKISU_COMMIT: c4bdcaae023f8318e85b0782cf534fca4bc8aa62
+      # BakaSU 35226 (latest reviewed upstream); keep the ReSukiSU input alias.
+      RESUKISU_COMMIT: 59afa46b325126b12a48234063cd0c2a6b735b57
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -546,11 +546,11 @@ jobs:
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
             "ReSukiSU")
-              echo "添加 ReSukiSU..."
-              curl -fLSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/$RESUKISU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/resukisu-setup.sh"
+              echo "添加 BakaSU (原 ReSukiSU)..."
+              curl -fLSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$RESUKISU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/resukisu-setup.sh"
               bash "$RUNNER_TEMP/resukisu-setup.sh" "$RESUKISU_COMMIT"
               if [ "$(git -C KernelSU rev-parse HEAD)" != "$RESUKISU_COMMIT" ]; then
-                echo "::error::ReSukiSU checkout does not match pinned commit $RESUKISU_COMMIT"
+                echo "::error::BakaSU checkout does not match pinned commit $RESUKISU_COMMIT"
                 exit 1
               fi
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
@@ -574,11 +574,11 @@ jobs:
             echo "KSU_LATEST_COMMIT_DATE=未知" >> $GITHUB_ENV
           fi
 
-      - name: 回移 ReSukiSU 35188 SELinux 修复
-        id: resukisu_selinux_backport
+      - name: 检查 BakaSU 上游 SELinux 修复
+        id: resukisu_selinux_source
         if: inputs.ksu_variant == 'ReSukiSU'
         run: |
-          python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" apply \
+          python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" check-source \
             --ksu "$KERNEL_ROOT/KernelSU"
 
       # ==================== 配置 SukiSU 管理器信息 ====================
@@ -675,7 +675,7 @@ jobs:
           cd $KERNEL_ROOT/common
           SUSFS_PATCH="50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
           if [ "${{ inputs.ksu_variant }}" = "ReSukiSU" ]; then
-            python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" filter-susfs \
+            python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" filter-susfs \
               --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
               --patch "$SUSFS_PATCH" --output "${SUSFS_PATCH}.resukisu"
             SUSFS_PATCH="${SUSFS_PATCH}.resukisu"
@@ -1049,15 +1049,16 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
 
-      - name: 校验 ReSukiSU 35188 SELinux 入口
+      - name: 校验 BakaSU SELinux 入口并完成 SUSFS 兼容
         id: resukisu_selinux_verify
         if: inputs.ksu_variant == 'ReSukiSU'
         run: |
           "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
             --enable KALLSYMS --enable KALLSYMS_ALL
-          python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" verify \
+          python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" integrate \
             --ksu "$KERNEL_ROOT/KernelSU" --common "$KERNEL_ROOT/common" \
-            --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+            --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
+            --susfs "${{ inputs.enable_susfs }}"
 
       # ==================== 配置内核名称 ====================
       - name: 配置内核名称

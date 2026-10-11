@@ -12,6 +12,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 import resukisu_35188_selinux as backport
+import bakasu_selinux as upstream
 
 
 def block(path, body):
@@ -151,20 +152,26 @@ class RealSusfsTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("yaml"), "PyYAML not installed")
 class WorkflowTests(unittest.TestCase):
-    def test_both_workflows_enable_identical_backport_for_resukisu_only(self):
+    def test_both_workflows_enable_identical_upstream_integration_for_resukisu_only(self):
         import yaml
         selected = []
         for name in ("build.yml", "build-make.yml"):
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
             for job in workflow["jobs"].values():
-                self.assertEqual(job["env"]["RESUKISU_COMMIT"], backport.load_config()["base_commit"])
+                self.assertEqual(job["env"]["RESUKISU_COMMIT"], upstream.load_config()["commit"])
             steps = [step for job in workflow["jobs"].values() for step in job.get("steps", [])]
             added = [step for step in steps if step.get("id", "").startswith("resukisu_selinux_")]
             self.assertEqual(len(added), 2)
             for step in added:
                 self.assertEqual(step["if"], "inputs.ksu_variant == 'ReSukiSU'")
             self.assertIn("--enable KALLSYMS_ALL", added[1]["run"])
+            self.assertIn("check-source", added[0]["run"])
+            self.assertIn("integrate", added[1]["run"])
+            self.assertIn('--susfs "${{ inputs.enable_susfs }}"', added[1]["run"])
             self.assertNotIn("|| true", "\n".join(step["run"] for step in added))
+            self.assertNotIn("resukisu_35188_selinux.py", "\n".join(step.get("run", "") for step in steps))
+            setup = next(step["run"] for step in steps if step["name"] == "添加 KernelSU")
+            self.assertIn("raw.githubusercontent.com/Baka-SU/BakaSU/$RESUKISU_COMMIT/kernel/setup.sh", setup)
             susfs = next(step["run"] for step in steps if step["name"] == "应用 SUSFS 补丁")
             self.assertIn('if [ "${{ inputs.ksu_variant }}" = "ReSukiSU" ]; then', susfs)
             self.assertIn("filter-susfs", susfs)

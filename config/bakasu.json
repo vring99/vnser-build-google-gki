@@ -1,0 +1,13 @@
+{
+  "repository": "Baka-SU/BakaSU",
+  "commit": "59afa46b325126b12a48234063cd0c2a6b735b57",
+  "version_code": 35226,
+  "upstream_files": {
+    "kernel/compat/kernel_compat.h": "04271a53c8c7e5f57d87c607052d8ebbbc545f8fd8580d07af0deaa9555891e0",
+    "kernel/feature/selinux_hide.c": "2ddc1162408745afa515dd0051dac2e52656548695c25363fecb3e5bf2d508a7",
+    "kernel/selinux/sepolicy.c": "504c73cfe3170e71b3356a27cd1751e29717f141681f69d9a7e133924ee9b339",
+    "kernel/tools/kernel_compat.mk": "e12cc9ce09544b8c35fa189993833e8100f4a93115b7b52fbfc171a0ff28ca26",
+    "kernel/tools/static_export_check.mk": "6235b7bd19b64e35c1be59f1bbd02ec46393ee81b98a4ff334aaabfa95ede164",
+    "kernel/tools/susfs_compat.mk": "25eb93fe03d155f5cb19f1de8a4e291d88f0016ff0f7e53b558f63fae1a9e2a7"
+  }
+}

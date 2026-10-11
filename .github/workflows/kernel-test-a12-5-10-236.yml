@@ -1,4 +1,4 @@
-name: 测试构建 - 5.10.236 (ReSukiSU 35188)
+name: 测试构建 - 5.10.236 (BakaSU 35226)
 
 permissions:
   contents: write
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build-test:
-    name: "5.10.236-android12-2025-05 / ReSukiSU 35188"
+    name: "5.10.236-android12-2025-05 / BakaSU 35226"
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:

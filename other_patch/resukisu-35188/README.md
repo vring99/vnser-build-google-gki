@@ -1,5 +1,9 @@
 # ReSukiSU 35188 SELinux backport
 
+Historical integration: current workflows build BakaSU 35226 with its upstream
+fixes instead. See [the active integration](../bakasu/README.md). The sections
+below describe the retained 35188 backport, which current workflows do not apply.
+
 Base: `c4bdcaae023f8318e85b0782cf534fca4bc8aa62` (35188).
 The workflow applies an uncommitted patch; it does not advance HEAD, change
 the version calculation, or update the manager/Kconfig/Kbuild to BakaSU.
