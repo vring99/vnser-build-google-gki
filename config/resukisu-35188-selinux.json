@@ -1,0 +1,48 @@
+{
+  "base_commit": "c4bdcaae023f8318e85b0782cf534fca4bc8aa62",
+  "patch_sha256": "01c9e11c26552e4679103a3da6d09711a98de71501f57f52df0788e25a1af077",
+  "patched_files": {
+    "kernel/compat/kernel_compat.h": "04271a53c8c7e5f57d87c607052d8ebbbc545f8fd8580d07af0deaa9555891e0",
+    "kernel/feature/selinux_hide.c": "bece988dd1fe6984bf0b8559f2d69239b2b31734741f3c2b14029b598c3fb575",
+    "kernel/selinux/sepolicy.c": "d0184bf46abed3c9f0c6b1651df1a104714cf37e1043da520c60db246c64e469",
+    "kernel/tools/kernel_compat.mk": "e12cc9ce09544b8c35fa189993833e8100f4a93115b7b52fbfc171a0ff28ca26",
+    "kernel/tools/static_export_check.mk": "0a33d218190346f691020814ba09034c0ebbb5cbf2259750481691d3d91e12f5"
+  },
+  "families": {
+    "android12-5.10": {
+      "susfs_commit": "9892175b4acec7ee844e113b8d02c0f4d12cdfac",
+      "legacy_blocks": {
+        "security/selinux/hooks.c": "13c21a0df75d267fe92557c86e76433beb5c4891d2db28bb8c22b9764ddc3840",
+        "security/selinux/selinuxfs.c": "56b1ebb26d688faa24c6ae1453794a718508eb95f131161fc01cf7e8c7f07184"
+      }
+    },
+    "android13-5.15": {
+      "susfs_commit": "687d2d18d94cb2e3e72d1074778d58384d58e379",
+      "legacy_blocks": {
+        "security/selinux/hooks.c": "a4bc5a6a4345dd2ad3c2805bda1a6dd9431284bba1c718acdb954022a7ef7c51",
+        "security/selinux/selinuxfs.c": "abeccc0f84e894f9bb6784e947ea49fa0c884624c01256535682bbf594135699"
+      }
+    },
+    "android14-6.1": {
+      "susfs_commit": "24743360ea08d98f6ad72b856851abed8de5854f",
+      "legacy_blocks": {
+        "security/selinux/hooks.c": "43a925616660e64a225d303a8ac48db0f1234b729602a7f01db5c85aa90a51d8",
+        "security/selinux/selinuxfs.c": "98b754c66298a70ce31715ceb2a68161ba04ed00110188f2233f76bc6751dc91"
+      }
+    },
+    "android15-6.6": {
+      "susfs_commit": "a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a",
+      "legacy_blocks": {
+        "security/selinux/hooks.c": "1fed1aa76a490df626be7cd16a7a9417b587252e2c172b7e7b4efb1bb1b2b710",
+        "security/selinux/selinuxfs.c": "1dbe6aae89c49c9a46b6c0877d634b5c1e40a0946fc3c24152354a8e923f257f"
+      }
+    },
+    "android16-6.12": {
+      "susfs_commit": "b213c54126fb243595ce7876e91d84d6e0861fec",
+      "legacy_blocks": {
+        "security/selinux/hooks.c": "918a71ff1cad04c2115afd0196db3558d08452ee4736619c6ed3f75afa40ab60",
+        "security/selinux/selinuxfs.c": "829132b3a7b80920f9ce1ee35e4123ca89000e523a820f52c72bc1bfbde67211"
+      }
+    }
+  }
+}
