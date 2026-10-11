@@ -576,6 +576,13 @@ jobs:
             echo "KSU_LATEST_COMMIT_DATE=未知" >> $GITHUB_ENV
           fi
 
+      - name: 回移 ReSukiSU 35188 SELinux 修复
+        id: resukisu_selinux_backport
+        if: inputs.ksu_variant == 'ReSukiSU'
+        run: |
+          python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" apply \
+            --ksu "$KERNEL_ROOT/KernelSU"
+
       # ==================== 配置 SukiSU 管理器信息 ====================
       - name: 配置 SukiSU 管理器信息
         if: inputs.ksu_variant == 'SukiSU'
@@ -668,7 +675,14 @@ jobs:
 
           # 应用主 SUSFS 补丁到内核
           cd $KERNEL_ROOT/common
-          patch -p1 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
+          SUSFS_PATCH="50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
+          if [ "${{ inputs.ksu_variant }}" = "ReSukiSU" ]; then
+            python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" filter-susfs \
+              --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
+              --patch "$SUSFS_PATCH" --output "${SUSFS_PATCH}.resukisu"
+            SUSFS_PATCH="${SUSFS_PATCH}.resukisu"
+          fi
+          patch -p1 < "$SUSFS_PATCH" || true
 
           # 应用版本特定修复 (所有 KSU 变体)
           if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
@@ -1034,6 +1048,16 @@ jobs:
           CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
+
+      - name: 校验 ReSukiSU 35188 SELinux 入口
+        id: resukisu_selinux_verify
+        if: inputs.ksu_variant == 'ReSukiSU'
+        run: |
+          "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
+            --enable KALLSYMS --enable KALLSYMS_ALL
+          python3 "$ZZH_PATCHES/scripts/resukisu_35188_selinux.py" verify \
+            --ksu "$KERNEL_ROOT/KernelSU" --common "$KERNEL_ROOT/common" \
+            --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
       # ==================== 配置内核名称 ====================
       - name: 配置内核名称
