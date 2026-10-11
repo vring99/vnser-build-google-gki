@@ -6,6 +6,12 @@ at `59afa46b325126b12a48234063cd0c2a6b735b57`, the main branch head reviewed on
 workflows and the 5.10.236 test use it. `config/bakasu.json` records the revision,
 version and reviewed source hashes. Manager downloads use the same revision.
 
+Action-Build uses the same snapshot and integration in both OnePlus build
+implementations, including its Snapdragon, MTK and test callers. Keep
+`scripts/bakasu_selinux.py`, `scripts/resukisu_35188_selinux.py`,
+`config/bakasu.json` and `config/resukisu-35188-selinux.json` synchronized
+between the repositories when updating the reviewed integration.
+
 The SID synchronization, permission-check ordering and SELinux parsing timing
 fixes are already upstream. The build no longer applies the 35188 backport.
 The historical patch and its tests remain available for review or rollback.
