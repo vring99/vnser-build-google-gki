@@ -180,12 +180,11 @@ jobs:
           fi
 
       # ==================== 安装编译依赖 ====================
-      # 安装内核编译所需的各种工具和库（使用 apt 缓存加速）
+      # 直接安装系统依赖，不依赖 APT 文件缓存恢复
       - name: 安装编译依赖
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: ccache python3 git curl build-essential libssl-dev bison flex libelf-dev libdw-dev dwarves
-          execute_install_scripts: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache python3 git curl build-essential libssl-dev bison flex libelf-dev libdw-dev dwarves
 
       # ==================== 配置 ccache ====================
       # ccache 用于缓存编译结果，加速后续构建
