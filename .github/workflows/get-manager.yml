@@ -75,8 +75,8 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "This is the SukiSU variant"
             git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
-            echo "This is the BakaSU variant (formerly ReSukiSU)"
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
+            echo "This is the BakaSU variant"
             git clone https://github.com/Baka-SU/BakaSU.git KernelSU
             BAKASU_COMMIT=$(python3 -c 'import json; print(json.load(open("config/bakasu.json"))["commit"])')
             git -C KernelSU checkout --detach "$BAKASU_COMMIT"
@@ -99,7 +99,7 @@ jobs:
 
           if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
             KSU_VERSION=$((30700 + KSU_GIT_VERSION))
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ] || [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             KSU_VERSION=$((20000 + KSU_GIT_VERSION))
@@ -131,7 +131,7 @@ jobs:
             echo "SukiSU..."
             REPO="SukiSU-Ultra/SukiSU-Ultra"
             KSUM="Manager"
-          elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
             echo "BakaSU..."
             REPO="Baka-SU/BakaSU"
             KSUM="Manager"
@@ -169,7 +169,7 @@ jobs:
               BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=1" |
                 jq -r '.workflow_runs[0].id')
-            elif [ "${{ inputs.kernelsu_variant }}" == "ReSukiSU" ]; then
+            elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
               BAKASU_COMMIT=$(git -C KernelSU rev-parse HEAD)
               BUILD_ID=$(curl -fsS -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?head_sha=$BAKASU_COMMIT&status=success" |

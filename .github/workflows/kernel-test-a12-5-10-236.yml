@@ -22,7 +22,7 @@ jobs:
       sub_level: "236"
       os_patch_level: "2025-05"
       revision: "r4"
-      ksu_variant: "ReSukiSU"
+      ksu_variant: "BakaSU"
       ksu_branch: "Stable(标准)"
       version: ""
       build_time: "Sun Dec 01 08:10:00 UTC 2024"

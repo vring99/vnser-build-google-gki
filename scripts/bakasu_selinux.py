@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-import resukisu_35188_selinux as integration
+import bakasu_35188_selinux as integration
 
 
 CONFIG = integration.ROOT / "config/bakasu.json"

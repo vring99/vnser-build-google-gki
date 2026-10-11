@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backport the reviewed SELinux fixes without advancing ReSukiSU 35188."""
+"""Backport the reviewed SELinux fixes without advancing BakaSU 35188."""
 
 import argparse
 import hashlib
@@ -11,8 +11,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "config/resukisu-35188-selinux.json"
-PATCH = ROOT / "other_patch/resukisu-35188/selinux-fixes.patch"
+CONFIG = ROOT / "config/bakasu-35188-selinux.json"
+PATCH = ROOT / "other_patch/bakasu-35188/selinux-fixes.patch"
 LEGACY_PATHS = ("security/selinux/hooks.c", "security/selinux/selinuxfs.c")
 
 
@@ -33,7 +33,7 @@ def git(directory, *args, check=True):
 def verify_base(ksu, config):
     actual = git(ksu, "rev-parse", "HEAD").stdout.strip()
     if actual != config["base_commit"]:
-        raise ValueError(f"Expected ReSukiSU 35188 ({config['base_commit']}), got {actual}")
+        raise ValueError(f"Expected BakaSU 35188 ({config['base_commit']}), got {actual}")
 
 
 def verify_backport(ksu, config):
@@ -52,7 +52,7 @@ def apply_backport(ksu, config):
         git(ksu, "apply", "--check", str(PATCH))
         git(ksu, "apply", str(PATCH))
     verify_backport(ksu, config)
-    print("ReSukiSU 35188: SID table and SELinux timing fixes applied; HEAD unchanged")
+    print("BakaSU 35188: SID table and SELinux timing fixes applied; HEAD unchanged")
 
 
 def filter_patch(data, expected):
@@ -140,11 +140,11 @@ def main():
             info = config["families"][args.family]
             result = filter_patch(args.patch.read_bytes(), info["legacy_blocks"])
             args.output.write_bytes(result)
-            print(f"{args.family}: using backported ReSukiSU SELinux hooks; other SUSFS diffs preserved")
+            print(f"{args.family}: using backported BakaSU SELinux hooks; other SUSFS diffs preserved")
         else:
             verify_backport(args.ksu, config)
             verify_kernel(args.common, args.family)
-            print(f"{args.family}: ReSukiSU 35188 SELinux backport preflight passed")
+            print(f"{args.family}: BakaSU 35188 SELinux backport preflight passed")
     except (ValueError, OSError, subprocess.CalledProcessError) as error:
         detail = error.stderr if isinstance(error, subprocess.CalledProcessError) else str(error)
         print(f"::error::{detail.strip()}", file=sys.stderr)

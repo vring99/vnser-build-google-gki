@@ -54,7 +54,7 @@ on:
           - Next
           - MKSU
           - SukiSU
-          - ReSukiSU
+          - BakaSU
         default: SukiSU
       kernelsu_branch:
         description: "KSU 分支"

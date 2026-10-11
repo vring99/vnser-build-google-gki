@@ -1,15 +1,15 @@
 # BakaSU 35226 integration
 
-The ReSukiSU workflow option now builds BakaSU (the renamed upstream project)
-at `59afa46b325126b12a48234063cd0c2a6b735b57`, the main branch head reviewed on
+The BakaSU workflow option builds
+`59afa46b325126b12a48234063cd0c2a6b735b57`, the main branch head reviewed on
 2026-10-11. This is a reproducible snapshot, not a floating branch. Both build
 workflows and the 5.10.236 test use it. `config/bakasu.json` records the revision,
 version and reviewed source hashes. Manager downloads use the same revision.
 
 Action-Build uses the same snapshot and integration in both OnePlus build
 implementations, including its Snapdragon, MTK and test callers. Keep
-`scripts/bakasu_selinux.py`, `scripts/resukisu_35188_selinux.py`,
-`config/bakasu.json` and `config/resukisu-35188-selinux.json` synchronized
+`scripts/bakasu_selinux.py`, `scripts/bakasu_35188_selinux.py`,
+`config/bakasu.json` and `config/bakasu-35188-selinux.json` synchronized
 between the repositories when updating the reviewed integration.
 
 The SID synchronization, permission-check ordering and SELinux parsing timing
@@ -35,7 +35,7 @@ root permission policy are unchanged by this integration. Use a matching
 BakaSU manager and enable its SELinux Hide setting when testing that feature.
 
 Validation: `python -m unittest discover -s scripts/tests -v`.
-Optional real-source fixtures: `BAKASU_TEST_SOURCE`, `RESUKISU_TEST_SOURCE`,
+Optional real-source fixtures: `BAKASU_TEST_SOURCE`, `BAKASU_35188_TEST_SOURCE`,
 `SUSFS_TEST_SOURCE`, and `AOSP_SELINUX_TEST_SOURCE` (five family subdirectories
 containing Makefile and SELinux sources). These tests are not a complete
 kernel build or an on-device compatibility guarantee.

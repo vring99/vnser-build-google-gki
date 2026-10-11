@@ -88,8 +88,8 @@ jobs:
     # ==================== 环境变量配置 ====================
     # ccache 配置用于加速重复编译
     env:
-      # BakaSU 35226 (latest reviewed upstream); keep the ReSukiSU input alias.
-      RESUKISU_COMMIT: 59afa46b325126b12a48234063cd0c2a6b735b57
+      # BakaSU 35226 at the reviewed upstream commit.
+      BAKASU_COMMIT: 59afa46b325126b12a48234063cd0c2a6b735b57
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -255,8 +255,8 @@ jobs:
               echo "ShirkNeko 仓库未找到分支 $SUSFS_BRANCH，回退到 simonpunk 原版..."
               git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
             fi
-          elif [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
-            # ReSukiSU 使用 simonpunk 的原版 SUSFS
+          elif [ "${{ inputs.ksu_variant }}" == "BakaSU" ]; then
+            # BakaSU 使用 simonpunk 的原版 SUSFS
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           else
             # 其他变体使用 simonpunk 的原版 SUSFS
@@ -446,9 +446,9 @@ jobs:
               case "$variant_input" in
                 "Next") BRANCH="-s stable" ;;
                 "SukiSU") BRANCH="-s main" ;;
-                "ReSukiSU") BRANCH="-s main" ;;
+                "BakaSU") BRANCH="-s main" ;;
                 #34933
-                #"ReSukiSU") BRANCH="-s 3f9c42e8" ;;
+                #"BakaSU") BRANCH="-s 3f9c42e8" ;;
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 *) BRANCH="-" ;;
               esac
@@ -457,7 +457,7 @@ jobs:
               case "$variant_input" in
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 "Next") BRANCH="-s dev" ;;
-                "SukiSU"|"ReSukiSU") BRANCH="-s builtin" ;;
+                "SukiSU"|"BakaSU") BRANCH="-s builtin" ;;
                 *) echo "未知变体: $variant_input" >&2; exit 1 ;;
               esac
               ;;
@@ -467,8 +467,8 @@ jobs:
               ;;
           esac
 
-          # SukiSU/ReSukiSU 不启用 SUSFS 时强制使用 main 分支
-          if [ "$variant_input" = "SukiSU" ] || [ "$variant_input" = "ReSukiSU" ]; then
+          # SukiSU/BakaSU 不启用 SUSFS 时强制使用 main 分支
+          if [ "$variant_input" = "SukiSU" ] || [ "$variant_input" = "BakaSU" ]; then
             if [ "${{ inputs.enable_susfs }}" = "false" ]; then
               BRANCH="-s main"
             fi
@@ -487,8 +487,8 @@ jobs:
             fi
           fi
 
-          if [ "$variant_input" = "ReSukiSU" ]; then
-            BRANCH="-s $RESUKISU_COMMIT"
+          if [ "$variant_input" = "BakaSU" ]; then
+            BRANCH="-s $BAKASU_COMMIT"
           fi
 
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
@@ -547,12 +547,12 @@ jobs:
               echo "添加 SukiSU..."
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
-            "ReSukiSU")
-              echo "添加 BakaSU (原 ReSukiSU)..."
-              curl -fLSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$RESUKISU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/resukisu-setup.sh"
-              bash "$RUNNER_TEMP/resukisu-setup.sh" "$RESUKISU_COMMIT"
-              if [ "$(git -C KernelSU rev-parse HEAD)" != "$RESUKISU_COMMIT" ]; then
-                echo "::error::BakaSU checkout does not match pinned commit $RESUKISU_COMMIT"
+            "BakaSU")
+              echo "添加 BakaSU..."
+              curl -fLSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$BAKASU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/bakasu-setup.sh"
+              bash "$RUNNER_TEMP/bakasu-setup.sh" "$BAKASU_COMMIT"
+              if [ "$(git -C KernelSU rev-parse HEAD)" != "$BAKASU_COMMIT" ]; then
+                echo "::error::BakaSU checkout does not match pinned commit $BAKASU_COMMIT"
                 exit 1
               fi
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
@@ -577,8 +577,8 @@ jobs:
           fi
 
       - name: 检查 BakaSU 上游 SELinux 修复
-        id: resukisu_selinux_source
-        if: inputs.ksu_variant == 'ReSukiSU'
+        id: bakasu_selinux_source
+        if: inputs.ksu_variant == 'BakaSU'
         run: |
           python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" check-source \
             --ksu "$KERNEL_ROOT/KernelSU"
@@ -668,24 +668,24 @@ jobs:
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               cd ..
               ;;
-            "Next"|"SukiSU"|"ReSukiSU")
-              echo "Next/SukiSU/ReSukiSU 使用内置 SUSFS 支持"
+            "Next"|"SukiSU"|"BakaSU")
+              echo "Next/SukiSU/BakaSU 使用内置 SUSFS 支持"
               ;;
           esac
 
           # 应用主 SUSFS 补丁到内核
           cd $KERNEL_ROOT/common
           SUSFS_PATCH="50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
-          if [ "${{ inputs.ksu_variant }}" = "ReSukiSU" ]; then
+          if [ "${{ inputs.ksu_variant }}" = "BakaSU" ]; then
             python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" filter-susfs \
               --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
-              --patch "$SUSFS_PATCH" --output "${SUSFS_PATCH}.resukisu"
-            SUSFS_PATCH="${SUSFS_PATCH}.resukisu"
+              --patch "$SUSFS_PATCH" --output "${SUSFS_PATCH}.bakasu"
+            SUSFS_PATCH="${SUSFS_PATCH}.bakasu"
           fi
           patch -p1 < "$SUSFS_PATCH" || true
 
           # 应用版本特定修复 (所有 KSU 变体)
-          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
+          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "BakaSU" ]; then
             CURRENT_SUB="${{ inputs.sub_level }}"
             if [[ ! "$CURRENT_SUB" =~ ^[0-9]+$ ]]; then
               CURRENT_SUB=99999
@@ -815,7 +815,7 @@ jobs:
                 sed -i '/#include <linux\/dma-buf.h>/a #include <linux\/susfs_def.h>' ./fs/proc/base.c
                 sed -i '/#include <linux\/dma-buf.h>/a #ifdef CONFIG_KSU_SUSFS_SUS_MAP' ./fs/proc/base.c
               fi
-              # 修复 ReSukiSU: 缺少 susfs.h 导致编译报 undeclared identifier
+              # 修复 BakaSU: 缺少 susfs.h 导致编译报 undeclared identifier
               if grep -q 'SUSFS_IS_INODE_SUS_MAP\|SUSFS_IS_INODE_OPEN_REDIRECT' ./fs/proc/base.c && ! grep -qF '#include <linux/susfs.h>' ./fs/proc/base.c; then
                 if ! grep -qF '#include <linux/dma-buf.h>' ./fs/proc/base.c; then
                   sed -i '/#include <linux\/cpufreq_times.h>/a #include <linux\/dma-buf.h>' ./fs/proc/base.c
@@ -1050,8 +1050,8 @@ jobs:
           EOF
 
       - name: 校验 BakaSU SELinux 入口并完成 SUSFS 兼容
-        id: resukisu_selinux_verify
-        if: inputs.ksu_variant == 'ReSukiSU'
+        id: bakasu_selinux_verify
+        if: inputs.ksu_variant == 'BakaSU'
         run: |
           "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
             --enable KALLSYMS --enable KALLSYMS_ALL
@@ -1213,8 +1213,8 @@ jobs:
             echo "如果日期不同或相差过远则补丁失效、编译失败"
       # ==================== KPM 补丁 (仅 SukiSU) ====================
       # 为 SukiSU 应用 KPM (Kernel Patch Module) 补丁
-      #- name: 应用 KPM 补丁 (SukiSU/ReSukiSU/Next)
-      #  if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'ReSukiSU' || inputs.ksu_variant == 'Next')
+      #- name: 应用 KPM 补丁 (SukiSU/BakaSU/Next)
+      #  if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'BakaSU' || inputs.ksu_variant == 'Next')
       #  run: |
       ##    TARGET_PATH="$KERNEL_ROOT/common/out/arch/arm64/boot"
 
@@ -1234,10 +1234,8 @@ jobs:
           SRC_DIR="$KERNEL_ROOT/common/out/arch/arm64/boot"
 
           cp "$SRC_DIR/Image" ./bootimgs/
-          [ -f "$SRC_DIR/Image.lz4" ] && cp "$SRC_DIR/Image.lz4" ./bootimgs/
           cp "$SRC_DIR/Image" ./
-          [ -f "$SRC_DIR/Image.lz4" ] && cp "$SRC_DIR/Image.lz4" ./
-          gzip -n -k -f -9 ./Image > ./Image.gz
+          gzip -n -c -9 ./Image > ./Image.gz
 
       # ==================== 创建 AnyKernel3 压缩包 ====================
       - name: 创建 AnyKernel3 压缩包
@@ -1267,7 +1265,7 @@ jobs:
           unzip gki-kernel.zip && rm gki-kernel.zip
           $UNPACK_BOOTIMG --boot_img="$(pwd)/boot-5.10.img"
 
-          gzip -n -k -f -9 ./Image > ./Image.gz
+          gzip -n -c -9 ./Image > ./Image.gz
 
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
@@ -1279,18 +1277,13 @@ jobs:
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-gz.img ../${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
           
-          echo "Building boot-lz4.img"
-          $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img --ramdisk out/ramdisk --os_version 12.0.0 --os_patch_level "${{ inputs.os_patch_level }}"
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img ../${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
-
       # ==================== 构建 Boot 镜像 (Android 13+) ====================
       # Android 13 及以上版本不需要 ramdisk
       - name: 构建 Boot 镜像 (Android 13+)
         if: inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15'
         working-directory: bootimgs
         run: |
-          gzip -n -k -f -9 ./Image > ./Image.gz
+          gzip -n -c -9 ./Image > ./Image.gz
 
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
@@ -1301,11 +1294,6 @@ jobs:
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
           $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
           cp ./boot-gz.img ../${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
-
-          echo "Building boot-lz4.img"
-          $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img ../${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
 
       # ==================== 收集补丁冲突文件 ====================
       # 收集所有 .rej 文件用于调试补丁失败问题
@@ -1341,10 +1329,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           #name: ${{ inputs.ksu_variant }}_kernel-${{ env.CONFIG }}
-          name: ${{ inputs.kernelsu_variant }}(${{ env.KSUVER }})_kernel-${{ env.CONFIG }}
+          name: ${{ inputs.ksu_variant }}(${{ env.KSUVER }})_kernel-${{ env.CONFIG }}
           path: |
             *AnyKernel3.zip
-            *.img
+            *-boot.img
+            *-boot-gz.img
           compression-level: 9
 
       - name: 上传编译资产 (仅 AK3)
