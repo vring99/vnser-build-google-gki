@@ -1,0 +1,88 @@
+name: BakaSU 35226 / SUSFS SELinux - All GKI Kernels
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: kernel-bakasu-35226-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-a12-5-10:
+    name: "BakaSU 35226 / a12-5-10"
+    uses: ./.github/workflows/kernel-a12-5-10.yml
+    secrets: inherit
+    with:
+      kernelsu_variant: "BakaSU"
+      kernelsu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      cancel_susfs: false
+      called_from_main: true
+
+  build-a13-5-15:
+    name: "BakaSU 35226 / a13-5-15"
+    uses: ./.github/workflows/kernel-a13-5-15.yml
+    secrets: inherit
+    with:
+      kernelsu_variant: "BakaSU"
+      kernelsu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      cancel_susfs: false
+      called_from_main: true
+
+  build-a14-6-1:
+    name: "BakaSU 35226 / a14-6-1"
+    uses: ./.github/workflows/kernel-a14-6-1.yml
+    secrets: inherit
+    with:
+      kernelsu_variant: "BakaSU"
+      kernelsu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      cancel_susfs: false
+      called_from_main: true
+
+  build-a15-6-6:
+    name: "BakaSU 35226 / a15-6-6"
+    uses: ./.github/workflows/kernel-a15-6-6.yml
+    secrets: inherit
+    with:
+      kernelsu_variant: "BakaSU"
+      kernelsu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      cancel_susfs: false
+      called_from_main: true
+
+  build-a16-6-12:
+    name: "BakaSU 35226 / a16-6-12"
+    uses: ./.github/workflows/kernel-a16-6-12.yml
+    secrets: inherit
+    with:
+      kernelsu_variant: "BakaSU"
+      kernelsu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      cancel_susfs: false
+      called_from_main: true

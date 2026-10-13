@@ -71,26 +71,34 @@ class OfficialWorkflowTests(unittest.TestCase):
                         self.assertNotEqual(result.returncode, 0)
                         self.assertEqual(env_path.read_bytes(), b"")
 
-    def test_separate_35226_entrypoint_keeps_existing_test(self):
+    def test_full_35226_entrypoint_reuses_all_formal_matrices(self):
         if VERSION_INPUT == "bakasu_version":
-            name = "kernel-test-a12-5-10-236-bakasu-35226.yml"
-            original = "kernel-test-a12-5-10-236.yml"
+            name = "kernel-bakasu-35226.yml"
+            removed = "kernel-test-a12-5-10-236-bakasu-35226.yml"
+            families = ("a12-5-10", "a13-5-15", "a14-6-1", "a15-6-6", "a16-6-12")
+            expected = {f"kernel-{family}.yml" for family in families}
         else:
-            name = "Build Kernel OnePlus-35226-SUSFS-TEST.yml"
-            original = "Build Kernel OnePlus-TEST.yml"
+            name = "Build Kernel OnePlus-35226.yml"
+            removed = "Build Kernel OnePlus-35226-SUSFS-TEST.yml"
+            expected = {"Build Kernel OnePlus Snapdragon.yml", "Build Kernel OnePlus MTK.yml"}
+        self.assertFalse((ROOT / ".github/workflows" / removed).exists())
         workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
-        job = next(iter(workflow["jobs"].values()))
-        self.assertEqual(job["uses"], "./.github/workflows/" + WORKFLOWS[0])
-        self.assertEqual(job["with"][VERSION_INPUT], "35226")
-        if VERSION_INPUT == "bakasu_version":
-            self.assertTrue(job["with"]["enable_susfs"])
-            self.assertFalse(job["with"]["use_kpm"])
-            self.assertEqual(job["with"]["sub_level"], "236")
-        else:
-            self.assertEqual(job["with"]["FILE"], "${{ inputs.FILE }}")
-        existing = yaml.safe_load((ROOT / ".github/workflows" / original).read_text(encoding="utf-8"))
-        for existing_job in existing["jobs"].values():
-            self.assertNotIn(VERSION_INPUT, existing_job.get("with", {}))
+        self.assertEqual({job["uses"].removeprefix("./.github/workflows/")
+                          for job in workflow["jobs"].values()}, expected)
+        for job in workflow["jobs"].values():
+            self.assertEqual(job["with"][VERSION_INPUT], "35226")
+            if VERSION_INPUT == "bakasu_version":
+                self.assertEqual(job["with"]["kernelsu_variant"], "BakaSU")
+                self.assertFalse(job["with"]["cancel_susfs"])
+                self.assertFalse(job["with"]["use_kpm"])
+            parent = yaml.safe_load((ROOT / job["uses"]).read_text(encoding="utf-8"))
+            on = parent.get("on", parent.get(True))
+            self.assertEqual(on["workflow_call"]["inputs"][VERSION_INPUT]["default"], "35227")
+            self.assertEqual(on["workflow_dispatch"]["inputs"][VERSION_INPUT]["default"], "35227")
+            matrix_job = next(iter(parent["jobs"].values()))
+            self.assertTrue(matrix_job["strategy"]["matrix"]["include"])
+            self.assertEqual(matrix_job["with"][VERSION_INPUT],
+                             "${{ inputs." + VERSION_INPUT + " || '35227' }}")
 
 
 @unittest.skipUnless(os.environ.get("BAKASU_TEST_SOURCE") and os.environ.get("SUSFS_TEST_SOURCE"),
