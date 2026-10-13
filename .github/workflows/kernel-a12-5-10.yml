@@ -107,6 +107,11 @@ on:
         required: false
         type: boolean
         default: false
+      onlyAk3:
+        description: "Only package AK3; false also packages boot images"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   build-kernels-a12-5-10:

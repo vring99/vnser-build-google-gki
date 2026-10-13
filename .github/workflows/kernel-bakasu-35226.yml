@@ -26,6 +26,7 @@ jobs:
       use_kpm: false
       cancel_susfs: false
       called_from_main: true
+      onlyAk3: false
 
   build-a13-5-15:
     name: "BakaSU 35226 / a13-5-15"
@@ -66,7 +67,7 @@ jobs:
       kernelsu_branch: "Stable(标准)"
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
-      use_zram: true
+      use_zram: false
       use_bbg: true
       use_kpm: false
       cancel_susfs: false
@@ -81,7 +82,7 @@ jobs:
       kernelsu_branch: "Stable(标准)"
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
-      use_zram: true
+      use_zram: false
       use_bbg: true
       use_kpm: false
       cancel_susfs: false

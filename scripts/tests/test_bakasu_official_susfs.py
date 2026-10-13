@@ -91,11 +91,18 @@ class OfficialWorkflowTests(unittest.TestCase):
                 self.assertEqual(job["with"]["kernelsu_variant"], "BakaSU")
                 self.assertFalse(job["with"]["cancel_susfs"])
                 self.assertFalse(job["with"]["use_kpm"])
+                if job["uses"].endswith(("kernel-a15-6-6.yml", "kernel-a16-6-12.yml")):
+                    self.assertFalse(job["with"]["use_zram"])
+                if job["uses"].endswith("kernel-a12-5-10.yml"):
+                    self.assertIs(job["with"]["onlyAk3"], False)
             parent = yaml.safe_load((ROOT / job["uses"]).read_text(encoding="utf-8"))
             on = parent.get("on", parent.get(True))
             self.assertEqual(on["workflow_call"]["inputs"][VERSION_INPUT]["default"], "35227")
             self.assertEqual(on["workflow_dispatch"]["inputs"][VERSION_INPUT]["default"], "35227")
             matrix_job = next(iter(parent["jobs"].values()))
+            if VERSION_INPUT == "bakasu_version" and job["uses"].endswith("kernel-a12-5-10.yml"):
+                self.assertIs(on["workflow_call"]["inputs"]["onlyAk3"]["default"], False)
+                self.assertEqual(matrix_job["with"]["onlyAk3"], "${{ inputs.onlyAk3 || false }}")
             self.assertTrue(matrix_job["strategy"]["matrix"]["include"])
             self.assertEqual(matrix_job["with"][VERSION_INPUT],
                              "${{ inputs." + VERSION_INPUT + " || '35227' }}")
