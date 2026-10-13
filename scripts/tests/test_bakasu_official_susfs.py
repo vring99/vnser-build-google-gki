@@ -111,7 +111,7 @@ class OfficialWorkflowTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get("BAKASU_TEST_SOURCE") and os.environ.get("SUSFS_TEST_SOURCE"),
                      "real BakaSU and official SUSFS sources not supplied")
 class OfficialSourceTests(unittest.TestCase):
-    def test_real_workflow_installs_exact_official_file_and_only_removes_build_stop(self):
+    def test_real_workflow_preserves_official_code_except_redundant_function_guards(self):
         source = os.environ["BAKASU_TEST_SOURCE"]
         susfs = os.environ["SUSFS_TEST_SOURCE"]
         families = ("android12-5.10", "android13-5.15", "android14-6.1", "android15-6.6", "android16-6.12")
@@ -143,8 +143,26 @@ class OfficialSourceTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 match = re.search(rb"diff --git a/kernel/feature/selinux_hide.c.*?\nindex \w+\.\.(\w+)",
                                   official, re.S)
+                content = (ksu / "kernel/feature/selinux_hide.c").read_bytes().replace(b"\r\n", b"\n")
+                guards = (
+                    (b'    if (security_dump_masked_av_fn)\n'
+                     b'        security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");',
+                     b'    security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");'),
+                    (b'    if (context_struct_compute_av_fn) {\n'
+                     b'        context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);\n'
+                     b'    } else {\n'
+                     b'        context_struct_compute_av(policydb, scontext, tcontext, tclass, avd, NULL);\n'
+                     b'    }',
+                     b'    context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);'),
+                )
+                restored = content
+                for original, direct in guards:
+                    self.assertNotIn(original, content)
+                    self.assertEqual(content.count(direct), 1)
+                    restored = restored.replace(direct, original, 1)
+                # Restoring only the two constant guards must recover the exact official blob.
                 actual = subprocess.check_output([
-                    "git", "hash-object", str(ksu / "kernel/feature/selinux_hide.c")], text=True).strip()
+                    "git", "hash-object", "--stdin"], input=restored).decode().strip()
                 self.assertTrue(actual.startswith(match[1].decode()), actual)
                 changed = {name for name, content in before.items() if (ksu / name).read_bytes() != content}
                 self.assertEqual(changed, {"kernel/feature/selinux_hide.c", "kernel/tools/susfs_compat.mk"})

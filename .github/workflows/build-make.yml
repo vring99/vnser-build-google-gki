@@ -1076,6 +1076,36 @@ jobs:
           # Generate the official post-patch file without porting its code.
           git -C "$OFFICIAL_ROOT" apply --include=kernel/feature/selinux_hide.c \
             "$SUSFS_SOURCE/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+          # SUSFS exposes direct functions; their old pointer guards are always true.
+          python3 - "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c" <<'PY'
+          import sys
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          source = path.read_text(encoding="utf-8")
+          replacements = (
+              ("security_dump_masked_av_fn",
+               '    if (security_dump_masked_av_fn)\n'
+               '        security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");',
+               '    security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");'),
+              ("context_struct_compute_av_fn",
+               '    if (context_struct_compute_av_fn) {\n'
+               '        context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);\n'
+               '    } else {\n'
+               '        context_struct_compute_av(policydb, scontext, tcontext, tclass, avd, NULL);\n'
+               '    }',
+               '    context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);'),
+          )
+          for symbol, old, new in replacements:
+              if f"extern void {symbol}(" not in source:
+                  raise SystemExit(f"Expected SUSFS direct function declaration: {symbol}")
+              count = source.count(old)
+              if count == 1:
+                  source = source.replace(old, new, 1)
+              elif count != 0 or source.count(new) != 1:
+                  raise SystemExit(f"Unexpected SUSFS function call layout: {symbol}")
+          path.write_bytes(source.encode("utf-8"))
+          print("Removed redundant guards around SUSFS direct SELinux functions")
+          PY
           cp "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c" "$KSU_SOURCE/kernel/feature/selinux_hide.c"
           python3 - "$KSU_SOURCE/kernel/tools/susfs_compat.mk" <<'PY'
           import sys
