@@ -65,6 +65,14 @@ on:
           - Dev(开发)
           - Other(其他/指定)
         default: Stable(标准)
+      bakasu_version:
+        description: "BakaSU version"
+        required: false
+        type: choice
+        options:
+          - "35227"
+          - "35226"
+        default: "35227"
 
       # ==================== 可选配置 ====================
       version:
@@ -103,6 +111,11 @@ on:
         required: false
         type: boolean
         default: false
+      onlyAk3:
+        description: "Only package AnyKernel3"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   build-custom-kernel:
@@ -117,6 +130,7 @@ jobs:
       revision: ${{ inputs.revision || '' }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
+      bakasu_version: ${{ inputs.bakasu_version || '35227' }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -124,6 +138,7 @@ jobs:
       use_kpm: ${{ inputs.use_kpm }}
       supp_op: ${{ inputs.supp_op || false }}
       enable_susfs: ${{ !inputs.cancel_susfs }}
+      onlyAk3: ${{ inputs.onlyAk3 || false }}
 
   get-ksu-manager:
     uses: ./.github/workflows/get-manager.yml
