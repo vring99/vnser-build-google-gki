@@ -88,8 +88,9 @@ jobs:
     # ==================== 环境变量配置 ====================
     # ccache 配置用于加速重复编译
     env:
-      # BakaSU 35226 at the reviewed upstream commit.
-      BAKASU_COMMIT: 59afa46b325126b12a48234063cd0c2a6b735b57
+      # BakaSU 35227 with the official SUSFS companion implementation.
+      BAKASU_COMMIT: f4435f007b16f61705089ff982e3f981a6017979
+      SUSFS_KSU_COMMIT: 0a1f3ff71719fa2d6ec15f5568dac27fdb957fcc
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -574,13 +575,6 @@ jobs:
             echo "KSU_LATEST_COMMIT_DATE=未知" >> $GITHUB_ENV
           fi
 
-      - name: 检查 BakaSU 上游 SELinux 修复
-        id: bakasu_selinux_source
-        if: inputs.ksu_variant == 'BakaSU'
-        run: |
-          python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" check-source \
-            --ksu "$KERNEL_ROOT/KernelSU"
-
       # ==================== 配置 SukiSU 管理器信息 ====================
       - name: 配置 SukiSU 管理器信息
         if: inputs.ksu_variant == 'SukiSU'
@@ -674,12 +668,6 @@ jobs:
           # 应用主 SUSFS 补丁到内核
           cd $KERNEL_ROOT/common
           SUSFS_PATCH="50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
-          if [ "${{ inputs.ksu_variant }}" = "BakaSU" ]; then
-            python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" filter-susfs \
-              --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
-              --patch "$SUSFS_PATCH" --output "${SUSFS_PATCH}.bakasu"
-            SUSFS_PATCH="${SUSFS_PATCH}.bakasu"
-          fi
           patch -p1 < "$SUSFS_PATCH" || true
 
           # 应用版本特定修复 (所有 KSU 变体)
@@ -1049,16 +1037,39 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
 
-      - name: 校验 BakaSU SELinux 入口并完成 SUSFS 兼容
-        id: bakasu_selinux_verify
+      - name: 接入 SUSFS 官方 SELinux 实现并解除 BakaSU 编译阻断
+        id: bakasu_susfs_setup
         if: inputs.ksu_variant == 'BakaSU'
         run: |
           "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
             --enable KALLSYMS --enable KALLSYMS_ALL
-          python3 "$ZZH_PATCHES/scripts/bakasu_selinux.py" integrate \
-            --ksu "$KERNEL_ROOT/KernelSU" --common "$KERNEL_ROOT/common" \
-            --family "${{ inputs.android_version }}-${{ inputs.kernel_version }}" \
-            --susfs "${{ inputs.enable_susfs }}"
+          if [ "${{ inputs.enable_susfs }}" != "true" ]; then
+            exit 0
+          fi
+          KSU_SOURCE="$KERNEL_ROOT/KernelSU"
+          SUSFS_SOURCE="$SUSFS4KSU"
+          OFFICIAL_ROOT="$RUNNER_TEMP/susfs-official-selinux"
+          mkdir -p "$OFFICIAL_ROOT/kernel/feature"
+          curl -fLSs --retry 3 \
+            "https://raw.githubusercontent.com/tiann/KernelSU/$SUSFS_KSU_COMMIT/kernel/feature/selinux_hide.c" \
+            -o "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c"
+          # Generate the official post-patch file without porting its code.
+          git -C "$OFFICIAL_ROOT" apply --include=kernel/feature/selinux_hide.c \
+            "$SUSFS_SOURCE/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
+          cp "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c" "$KSU_SOURCE/kernel/feature/selinux_hide.c"
+          python3 - "$KSU_SOURCE/kernel/tools/susfs_compat.mk" <<'PY'
+          import sys
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          source = path.read_text()
+          stop = ("$(info -- $(REPO_NAME): susfs has NOT update with latest KernelSU source)\n"
+                  "$(info -- $(REPO_NAME): Please wait simonpunk update)\n"
+                  "$(error Please wait susfs update.)")
+          if source.count(stop) != 1:
+              raise SystemExit("Unexpected BakaSU SUSFS build guard; source left unchanged")
+          path.write_text(source.replace(stop, "", 1))
+          print("Official SUSFS SELinux implementation installed; BakaSU build guard removed")
+          PY
 
       # ==================== 配置内核名称 ====================
       - name: 配置内核名称
