@@ -1,0 +1,35 @@
+name: 测试构建 - 5.10.236 (BakaSU 35226 / SUSFS SELinux)
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: kernel-test-a12-5-10-236-bakasu-35226-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: "5.10.236-android12-2025-05 / BakaSU 35226 / SUSFS SELinux"
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      android_version: "android12"
+      kernel_version: "5.10"
+      sub_level: "236"
+      os_patch_level: "2025-05"
+      revision: "r4"
+      ksu_variant: "BakaSU"
+      ksu_branch: "Stable(标准)"
+      bakasu_version: "35226"
+      version: ""
+      build_time: "Sun Dec 01 08:10:00 UTC 2024"
+      use_zram: true
+      use_bbg: true
+      use_kpm: false
+      supp_op: false
+      enable_susfs: true
+      onlyAk3: false

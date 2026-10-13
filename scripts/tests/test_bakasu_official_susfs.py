@@ -1,4 +1,5 @@
 import json
+from itertools import product
 import os
 from pathlib import Path
 import re
@@ -16,6 +17,11 @@ CONFIG = json.loads((ROOT / "config/bakasu.json").read_text(encoding="utf-8"))
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
 WORKFLOWS = ("build.yml", "build-make.yml") if (ROOT / ".github/workflows/build.yml").exists() else (
     "build-kernel-original-make.yml", "Build Kernel OnePlus.yml")
+VERSION_INPUT = "bakasu_version" if WORKFLOWS[0] == "build.yml" else "BAKASU_VERSION"
+BUILDS = {
+    "35227": CONFIG["commit"],
+    "35226": "59afa46b325126b12a48234063cd0c2a6b735b57",
+}
 
 
 def jobs():
@@ -28,7 +34,7 @@ class OfficialWorkflowTests(unittest.TestCase):
     def test_pins_and_official_integration_match_between_builders(self):
         bodies = []
         for job in jobs():
-            self.assertEqual(job["env"]["BAKASU_COMMIT"], CONFIG["commit"])
+            self.assertEqual(job["env"]["BAKASU_VERSION"], "${{ inputs." + VERSION_INPUT + " }}")
             self.assertEqual(job["env"]["SUSFS_KSU_COMMIT"], CONFIG["susfs_ksu_commit"])
             runs = "\n".join(step.get("run", "") for step in job["steps"])
             for legacy in ("filter-susfs", "bakasu_selinux.py", "bakasu_35188_selinux.py", "BAKASU_TOOLS_DIR"):
@@ -36,6 +42,55 @@ class OfficialWorkflowTests(unittest.TestCase):
             step = next(step for step in job["steps"] if step.get("id") == "bakasu_susfs_setup")
             bodies.append(step["run"].split('OFFICIAL_ROOT=', 1)[1])
         self.assertEqual(bodies[0], bodies[1])
+
+    def test_existing_callers_default_to_35227(self):
+        for name in WORKFLOWS:
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
+            inputs = workflow.get("on", workflow.get(True))["workflow_call"]["inputs"]
+            self.assertEqual(inputs[VERSION_INPUT]["default"], str(CONFIG["version_code"]))
+            self.assertFalse(inputs[VERSION_INPUT]["required"])
+
+    def test_selectors_resolve_pins_and_reject_unknown_versions(self):
+        for job in jobs():
+            selector = next((step for step in job["steps"] if step.get("id") == "bakasu_version"), None)
+            self.assertIsNotNone(selector, "missing version selector")
+            self.assertEqual(job["steps"][0], selector)
+            if VERSION_INPUT == "bakasu_version":
+                self.assertEqual(selector["if"], "inputs.ksu_variant == 'BakaSU'")
+            for version in (*BUILDS, "35266", ""):
+                with self.subTest(builder=job.get("name"), version=version), tempfile.TemporaryDirectory() as directory:
+                    env_path = Path(directory) / "github-env"
+                    env_path.touch()
+                    result = subprocess.run([BASH, "-e", "-c", selector["run"]], capture_output=True,
+                                            env=dict(os.environ, BAKASU_VERSION=version,
+                                                     GITHUB_ENV=env_path.as_posix()))
+                    if version in BUILDS:
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertEqual(env_path.read_text().strip(), "BAKASU_COMMIT=" + BUILDS[version])
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertEqual(env_path.read_bytes(), b"")
+
+    def test_separate_35226_entrypoint_keeps_existing_test(self):
+        if VERSION_INPUT == "bakasu_version":
+            name = "kernel-test-a12-5-10-236-bakasu-35226.yml"
+            original = "kernel-test-a12-5-10-236.yml"
+        else:
+            name = "Build Kernel OnePlus-35226-SUSFS-TEST.yml"
+            original = "Build Kernel OnePlus-TEST.yml"
+        workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
+        job = next(iter(workflow["jobs"].values()))
+        self.assertEqual(job["uses"], "./.github/workflows/" + WORKFLOWS[0])
+        self.assertEqual(job["with"][VERSION_INPUT], "35226")
+        if VERSION_INPUT == "bakasu_version":
+            self.assertTrue(job["with"]["enable_susfs"])
+            self.assertFalse(job["with"]["use_kpm"])
+            self.assertEqual(job["with"]["sub_level"], "236")
+        else:
+            self.assertEqual(job["with"]["FILE"], "${{ inputs.FILE }}")
+        existing = yaml.safe_load((ROOT / ".github/workflows" / original).read_text(encoding="utf-8"))
+        for existing_job in existing["jobs"].values():
+            self.assertNotIn(VERSION_INPUT, existing_job.get("with", {}))
 
 
 @unittest.skipUnless(os.environ.get("BAKASU_TEST_SOURCE") and os.environ.get("SUSFS_TEST_SOURCE"),
@@ -49,13 +104,13 @@ class OfficialSourceTests(unittest.TestCase):
                    if step.get("id") == "bakasu_susfs_setup")
         run = 'OFFICIAL_ROOT=' + run.split('OFFICIAL_ROOT=', 1)[1]
         run = run.replace("python3 -", shlex.quote(sys.executable.replace("\\", "/")) + " -")
-        for family in families:
-            with self.subTest(family=family), tempfile.TemporaryDirectory() as directory:
+        for (version, commit), family in product(BUILDS.items(), families):
+            with self.subTest(version=version, family=family), tempfile.TemporaryDirectory() as directory:
                 temp = Path(directory)
                 ksu = temp / "KernelSU"
                 before = {}
                 for name in CONFIG["upstream_files"]:
-                    content = subprocess.check_output(["git", "-C", source, "show", f"{CONFIG['commit']}:{name}"])
+                    content = subprocess.check_output(["git", "-C", source, "show", f"{commit}:{name}"])
                     before[name] = content
                     path = ksu / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -82,6 +137,12 @@ class OfficialSourceTests(unittest.TestCase):
                 self.assertNotIn(b"$(error Please wait susfs update.)", guard)
                 self.assertIn(b"KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE", guard)
                 self.assertEqual(patch_path.read_bytes(), official)
+
+    def test_selected_commits_have_matching_version_codes(self):
+        for version, commit in BUILDS.items():
+            count = int(subprocess.check_output([
+                "git", "-C", os.environ["BAKASU_TEST_SOURCE"], "rev-list", "--count", commit]))
+            self.assertEqual(count + 30700, int(version))
 
 
 if __name__ == "__main__":

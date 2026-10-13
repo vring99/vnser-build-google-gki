@@ -158,7 +158,7 @@ class WorkflowTests(unittest.TestCase):
         for name in ("build.yml", "build-make.yml"):
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
             for job in workflow["jobs"].values():
-                self.assertEqual(job["env"]["BAKASU_COMMIT"], upstream.load_config()["commit"])
+                self.assertEqual(job["env"]["BAKASU_VERSION"], "${{ inputs.bakasu_version }}")
             steps = [step for job in workflow["jobs"].values() for step in job.get("steps", [])]
             added = [step for step in steps if step.get("id") == "bakasu_susfs_setup"]
             self.assertEqual(len(added), 1)
