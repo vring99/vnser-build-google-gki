@@ -6,6 +6,12 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      use_uni:
+        description: "启用 Unicode 绕过修复"
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: kernel-bakasu-35226-${{ github.ref }}
@@ -22,6 +28,7 @@ jobs:
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       cancel_susfs: false
@@ -38,6 +45,7 @@ jobs:
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       cancel_susfs: false
@@ -53,6 +61,7 @@ jobs:
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       cancel_susfs: false
@@ -68,6 +77,7 @@ jobs:
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: false
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       cancel_susfs: false
@@ -83,6 +93,7 @@ jobs:
       bakasu_version: "35226"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: false
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       cancel_susfs: false

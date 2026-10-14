@@ -6,6 +6,12 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      use_uni:
+        description: "启用 Unicode 绕过修复"
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: kernel-test-a12-5-10-236-${{ github.ref }}
@@ -27,6 +33,7 @@ jobs:
       version: ""
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: true
       use_kpm: false
       supp_op: false

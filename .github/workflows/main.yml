@@ -66,6 +66,10 @@ on:
         default: "Sun Dec 01 08:10:00 UTC 2024"
         required: false
       # ==================== 功能开关 ====================
+      use_uni:
+        description: "启用 Unicode 绕过修复"
+        type: boolean
+        default: true
       use_zram:
         description: "启用 ZRAM 增强算法"
         type: boolean
@@ -125,6 +129,7 @@ jobs:
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       cancel_susfs: ${{ inputs.cancel_susfs }}
@@ -141,6 +146,7 @@ jobs:
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       cancel_susfs: ${{ inputs.cancel_susfs }}
@@ -157,6 +163,7 @@ jobs:
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       cancel_susfs: ${{ inputs.cancel_susfs }}
@@ -173,6 +180,7 @@ jobs:
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       cancel_susfs: ${{ inputs.cancel_susfs }}

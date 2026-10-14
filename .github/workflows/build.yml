@@ -58,6 +58,11 @@ on:
         default: "Sun Dec 01 08:10:00 UTC 2024"
 
       # ==================== 功能开关 ====================
+      use_uni:
+        description: "启用 Unicode 绕过修复"
+        required: false
+        type: boolean
+        default: true
       use_zram:
         required: true
         type: boolean
@@ -127,6 +132,7 @@ jobs:
           echo "KSU 分支      : ${{ inputs.ksu_branch }}"
           echo "构建时间      : ${{ inputs.build_time }}"
           echo "SUSFS 状态    : ${{ inputs.enable_susfs }}"
+          echo "Unicode 修复  : ${{ inputs.use_uni }}"
           echo "ZRAM 增强     : ${{ inputs.use_zram }}"
           echo "BBG 补丁      : ${{ inputs.use_bbg }}"
           echo "KPM 功能      : ${{ inputs.use_kpm }}"
@@ -876,6 +882,7 @@ jobs:
       # ==================== Unicode 绕过修复 ====================
       # 修复 Unicode 零宽字符绕过检测的问题
       - name: 应用 Unicode 绕过修复
+        if: inputs.use_uni
         working-directory: ${{ env.KERNEL_ROOT }}/common
         run: |
           if [ "${{ inputs.kernel_version }}" = "5.10" ] || [ "${{ inputs.kernel_version }}" = "5.15" ]; then

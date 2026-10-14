@@ -49,6 +49,11 @@ on:
         required: true
         type: boolean
         default: true
+      use_uni:
+        description: "启用 Unicode 绕过修复"
+        required: false
+        type: boolean
+        default: true
       use_bbg:
         description: "启用 BBG 防格机"
         required: true
@@ -93,6 +98,10 @@ on:
       use_zram:
         required: true
         type: boolean
+      use_uni:
+        required: false
+        type: boolean
+        default: true
       use_bbg:
         required: true
         type: boolean
@@ -185,6 +194,7 @@ jobs:
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
+      use_uni: ${{ inputs.use_uni }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
       supp_op: false
