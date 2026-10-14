@@ -9,6 +9,10 @@ on:
       kernelsu_variant:
         required: true
         type: string
+      bakasu_version:
+        required: false
+        type: string
+        default: "35226"
     outputs:
       susVer:
         description: "The fetched SUSFS version number"
@@ -27,6 +31,7 @@ jobs:
       # 输出2: SUSFS版本号
       susVer: ${{ steps.get_version.outputs.sversion }}
     env:
+      BAKASU_VERSION: ${{ inputs.bakasu_version }}
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -78,7 +83,11 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
             echo "This is the BakaSU variant"
             git clone https://github.com/Baka-SU/BakaSU.git KernelSU
-            BAKASU_COMMIT=$(python3 -c 'import json; print(json.load(open("config/bakasu.json"))["commit"])')
+            case "$BAKASU_VERSION" in
+              35226) BAKASU_COMMIT=59afa46b325126b12a48234063cd0c2a6b735b57 ;;
+              35227) BAKASU_COMMIT=f4435f007b16f61705089ff982e3f981a6017979 ;;
+              *) echo "::error::Unsupported BakaSU version: $BAKASU_VERSION"; exit 1 ;;
+            esac
             git -C KernelSU checkout --detach "$BAKASU_COMMIT"
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             echo "This is the Official"

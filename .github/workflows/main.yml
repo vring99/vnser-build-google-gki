@@ -46,6 +46,14 @@ on:
           - Next
           - MKSU
         default: SukiSU
+      bakasu_version:
+        description: "BakaSU version"
+        type: choice
+        options:
+          - "35226"
+          - "35227"
+        default: "35226"
+        required: false
       kernelsu_branch:
         description: "KSU 分支"
         type: choice
@@ -117,6 +125,7 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
 
   # ==================== Android 12 - 5.10 构建 ====================
   build-a12-5-10:
@@ -126,6 +135,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -143,6 +153,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -160,6 +171,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -177,6 +189,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -245,6 +258,7 @@ jobs:
       REPO_OWNER: ${{ github.repository_owner }}
       REPO_NAME: ${{ github.event.repository.name }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BAKASU_VERSION: ${{ inputs.bakasu_version || '35226' }}
 
     steps:
       # ==================== 设置显示名称 ====================
@@ -347,7 +361,11 @@ jobs:
           esac
 
           if [[ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]]; then
-            KSU_REF=$(python3 -c 'import json; print(json.load(open("config/bakasu.json"))["commit"])')
+            case "$BAKASU_VERSION" in
+              35226) KSU_REF=59afa46b325126b12a48234063cd0c2a6b735b57 ;;
+              35227) KSU_REF=f4435f007b16f61705089ff982e3f981a6017979 ;;
+              *) echo "::error::Unsupported BakaSU version: $BAKASU_VERSION"; exit 1 ;;
+            esac
             KSU_URL="https://github.com/$REPO_URL2/commit/$KSU_REF"
           elif [[ "${{ inputs.kernelsu_branch }}" == "Stable(标准)" && "${{ inputs.kernelsu_variant }}" != "MKSU" ]]; then
             TAG=$(git ls-remote --tags --sort=-v:refname $REPO_URL | grep -o 'refs/tags/.*' | cut -d'/' -f3 | head -n1)

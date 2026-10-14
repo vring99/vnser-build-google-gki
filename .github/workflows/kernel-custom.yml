@@ -72,7 +72,7 @@ on:
         options:
           - "35227"
           - "35226"
-        default: "35227"
+        default: "35226"
 
       # ==================== 可选配置 ====================
       version:
@@ -135,7 +135,7 @@ jobs:
       revision: ${{ inputs.revision || '' }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35227' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -151,3 +151,4 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      bakasu_version: ${{ inputs.bakasu_version || '35226' }}

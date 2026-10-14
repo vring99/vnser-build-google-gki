@@ -39,7 +39,7 @@ on:
         required: false
         type: string
         description: "BakaSU version (35227 or 35226)"
-        default: "35227"
+        default: "35226"
 
       # ==================== 可选配置 ====================
       version:
