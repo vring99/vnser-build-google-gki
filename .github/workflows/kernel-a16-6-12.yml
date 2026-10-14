@@ -52,7 +52,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: true
+        default: false
       use_bbg:
         description: "启用 BBG 防格机"
         required: true
@@ -62,7 +62,7 @@ on:
         description: "启用 KPM 功能"
         required: true
         type: boolean
-        default: true
+        default: false
       cancel_susfs:
         description: "禁用 SUSFS"
         required: true
@@ -103,13 +103,14 @@ on:
       use_uni:
         required: false
         type: boolean
-        default: true
+        default: false
       use_bbg:
         required: true
         type: boolean
       use_kpm:
         required: true
         type: boolean
+        default: false
       cancel_susfs:
         required: false
         type: boolean

@@ -62,7 +62,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: true
+        default: false
       use_zram:
         required: true
         type: boolean
@@ -74,7 +74,7 @@ on:
       use_kpm:
         required: true
         type: boolean
-        default: true
+        default: false
       enable_susfs:
         required: true
         type: boolean

@@ -52,10 +52,10 @@ class UnicodeToggleTests(unittest.TestCase):
         schema = (events(workflow)[event] or {}).get("inputs", {}).get(TOGGLE)
         self.assertIsNotNone(schema, f"missing {event} Unicode toggle")
         self.assertEqual(schema["type"], "boolean")
-        self.assertIs(schema.get("default"), True)
+        self.assertIs(schema.get("default"), False)
         self.assertFalse(schema.get("required", False))
 
-    def test_builders_keep_existing_callers_enabled_by_default(self):
+    def test_builders_disable_unicode_by_default(self):
         for name in BUILDERS:
             with self.subTest(workflow=name):
                 self.assert_toggle_schema(self.workflows[name], "workflow_call")
@@ -70,6 +70,19 @@ class UnicodeToggleTests(unittest.TestCase):
             if "workflow_call" in events(self.workflows[name]):
                 with self.subTest(workflow=name):
                     self.assert_toggle_schema(self.workflows[name], "workflow_call")
+
+    def test_kpm_is_disabled_by_default_in_every_build_entrypoint(self):
+        for name in self.chain:
+            for event, config in events(self.workflows[name]).items():
+                schema = (config or {}).get("inputs", {}).get("use_kpm")
+                if schema is not None:
+                    with self.subTest(workflow=name, event=event):
+                        self.assertEqual(schema["type"], "boolean")
+                        self.assertIs(schema.get("default"), False)
+            for target, job in callees(self.workflows[name]):
+                if target in self.chain:
+                    with self.subTest(workflow=name, target=target):
+                        self.assertIn(job["with"]["use_kpm"], (False, "${{ inputs.use_kpm }}"))
 
     def test_all_callers_preserve_false_without_truthy_fallback(self):
         for name in self.chain:

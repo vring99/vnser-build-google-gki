@@ -11,7 +11,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: true
+        default: false
 
 concurrency:
   group: kernel-bakasu-35226-${{ github.ref }}
