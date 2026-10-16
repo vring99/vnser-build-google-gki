@@ -82,8 +82,8 @@ jobs:
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "This is the SukiSU variant"
             git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
-          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
-            echo "This is the BakaSU variant"
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
+            echo "This is the BakaSU Pro variant"
             git clone --branch codex/bakasu-pro-latest https://github.com/vring99/BakaSU.git KernelSU
             case "$BAKASU_VERSION" in
               35233) BAKASU_COMMIT=7797d5ab79fc20577086729304fb50f6bc20f748 ;;
@@ -109,7 +109,7 @@ jobs:
 
           if [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
-          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
             KSU_VERSION=$((30700 + KSU_GIT_VERSION))
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ] || [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             KSU_VERSION=$((20000 + KSU_GIT_VERSION))
@@ -141,8 +141,8 @@ jobs:
             echo "SukiSU..."
             REPO="SukiSU-Ultra/SukiSU-Ultra"
             KSUM="Manager"
-          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
-            echo "BakaSU..."
+          elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
+            echo "BakaSU Pro..."
             REPO="vring99/BakaSU"
             KSUM="BakaSU-Pro-release"
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
@@ -156,7 +156,7 @@ jobs:
           fi
 
           FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")
-          if [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
+          if [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
             FILENAME="build-private-manager.yml"
           fi
           
@@ -182,7 +182,7 @@ jobs:
               BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?branch=$BRANCH&status=success&per_page=1" |
                 jq -r '.workflow_runs[0].id')
-            elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]; then
+            elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
               BUILD_ID=$(curl -fsS -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                 "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?head_sha=$BAKASU_MANAGER_COMMIT&status=success" |
                 jq -r '.workflow_runs['"$NUMBER"'].id')
@@ -245,7 +245,7 @@ jobs:
         if: steps.add_KSU.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.kernelsu_variant }}-Manager(${{ inputs.kernelsu_variant == 'BakaSU' && env.BAKASU_MANAGER_VERSION || env.KSU_VERSION }})
+          name: ${{ inputs.kernelsu_variant }}-Manager(${{ inputs.kernelsu_variant == 'BakaSU Pro' && env.BAKASU_MANAGER_VERSION || env.KSU_VERSION }})
           path: |
             **/*.apk
 

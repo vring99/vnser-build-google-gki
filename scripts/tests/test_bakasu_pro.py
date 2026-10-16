@@ -47,7 +47,7 @@ class ProWorkflowTests(unittest.TestCase):
             self.assertIn("selinux_hide_susfs.c", step["run"])
             self.assertIn("--disable KSU_MULTI_MANAGER_SUPPORT", step["run"])
             if GKI:
-                self.assertEqual(step["if"], "inputs.ksu_variant == 'BakaSU'")
+                self.assertEqual(step["if"], "inputs.ksu_variant == 'BakaSU Pro'")
 
     def test_selector_executes_and_rejects_old_versions(self):
         for name in BUILDERS:

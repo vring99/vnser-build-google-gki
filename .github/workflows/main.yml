@@ -41,7 +41,7 @@ on:
         type: choice
         options:
           - SukiSU
-          - BakaSU
+          - BakaSU Pro
           - Official
           - Next
           - MKSU
@@ -76,7 +76,7 @@ on:
       use_uni:
         description: "启用 Unicode 绕过修复"
         type: boolean
-        default: false
+        default: true
       use_zram:
         description: "启用 ZRAM 增强算法"
         type: boolean
@@ -270,7 +270,7 @@ jobs:
             "Official")  KSU_NAME="KernelSU" ;;
             "MKSU")      KSU_NAME="MKSU" ;;
             "SukiSU")    KSU_NAME="SukiSU" ;;
-            "BakaSU")  KSU_NAME="BakaSU" ;;
+            "BakaSU Pro")  KSU_NAME="BakaSU Pro" ;;
           esac
           echo "KSU_NAME=$KSU_NAME" >> $GITHUB_ENV
 
@@ -287,7 +287,7 @@ jobs:
           echo "LZ4_SUFFIX=${{ inputs.use_zram && '、LZ4KD' || '' }}" >> $GITHUB_ENV
 
           # Hook 类型
-          if [ "${{ inputs.kernelsu_variant }}" = "SukiSU" ] || [ "${{ inputs.kernelsu_variant }}" = "BakaSU" ]; then
+          if [ "${{ inputs.kernelsu_variant }}" = "SukiSU" ] || [ "${{ inputs.kernelsu_variant }}" = "BakaSU Pro" ]; then
             echo "HOOK_TYPE=-> SUSFS Inline Hooks" >> $GITHUB_ENV
           else
             echo "HOOK_TYPE=-> KPROBE Hooks" >> $GITHUB_ENV
@@ -337,11 +337,11 @@ jobs:
       # ==================== 确定 KSU 分支 ====================
       # 根据用户选择确定实际的 Git 分支
       - name: 确定 KSU 分支
-        if: inputs.kernelsu_branch == 'Dev(开发)' || inputs.kernelsu_variant == 'MKSU' || inputs.kernelsu_variant == 'SukiSU' || inputs.kernelsu_variant == 'BakaSU'
+        if: inputs.kernelsu_branch == 'Dev(开发)' || inputs.kernelsu_variant == 'MKSU' || inputs.kernelsu_variant == 'SukiSU' || inputs.kernelsu_variant == 'BakaSU Pro'
         run: |
           case "${{ inputs.kernelsu_variant }}" in
             "Official"|"MKSU") BRANCH="main" ;;
-            "SukiSU"|"BakaSU") BRANCH="main" ;;
+            "SukiSU"|"BakaSU Pro") BRANCH="main" ;;
             "Next") BRANCH="dev" ;;
             *) echo "错误: 未知变体" >&2; exit 1 ;;
           esac
@@ -356,10 +356,10 @@ jobs:
             "Next") REPO_URL="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_URL2="KernelSU-Next/KernelSU-Next" ;;
             "MKSU") REPO_URL="https://github.com/5ec1cff/KernelSU.git"; REPO_URL2="5ec1cff/KernelSU" ;;
             "SukiSU") REPO_URL="https://github.com/SukiSU-Ultra/SukiSU-Ultra.git"; REPO_URL2="SukiSU-Ultra/SukiSU-Ultra" ;;
-            "BakaSU") REPO_URL="https://github.com/vring99/BakaSU.git"; REPO_URL2="vring99/BakaSU" ;;
+            "BakaSU Pro") REPO_URL="https://github.com/vring99/BakaSU.git"; REPO_URL2="vring99/BakaSU" ;;
           esac
 
-          if [[ "${{ inputs.kernelsu_variant }}" == "BakaSU" ]]; then
+          if [[ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]]; then
             case "$BAKASU_VERSION" in
               35233) KSU_REF=7797d5ab79fc20577086729304fb50f6bc20f748 ;;
               *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;

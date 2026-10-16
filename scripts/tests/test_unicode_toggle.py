@@ -43,6 +43,15 @@ def build_chain(workflows):
 
 
 class UnicodeToggleTests(unittest.TestCase):
+    def test_manual_variant_choices_use_pro_name(self):
+        for name, workflow in self.workflows.items():
+            inputs = (events(workflow).get("workflow_dispatch") or {}).get("inputs", {})
+            variant = inputs.get("kernelsu_variant", {})
+            if variant:
+                with self.subTest(workflow=name):
+                    self.assertIn("BakaSU Pro", variant["options"])
+                    self.assertNotIn("BakaSU", variant["options"])
+
     @classmethod
     def setUpClass(cls):
         cls.workflows = load_workflows()
@@ -52,10 +61,10 @@ class UnicodeToggleTests(unittest.TestCase):
         schema = (events(workflow)[event] or {}).get("inputs", {}).get(TOGGLE)
         self.assertIsNotNone(schema, f"missing {event} Unicode toggle")
         self.assertEqual(schema["type"], "boolean")
-        self.assertIs(schema.get("default"), False)
+        self.assertIs(schema.get("default"), True)
         self.assertFalse(schema.get("required", False))
 
-    def test_builders_disable_unicode_by_default(self):
+    def test_builders_enable_unicode_by_default(self):
         for name in BUILDERS:
             with self.subTest(workflow=name):
                 self.assert_toggle_schema(self.workflows[name], "workflow_call")

@@ -54,7 +54,7 @@ on:
           - Next
           - MKSU
           - SukiSU
-          - BakaSU
+          - BakaSU Pro
         default: SukiSU
       kernelsu_branch:
         description: "KSU 分支"
@@ -89,7 +89,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: false
+        default: true
       use_zram:
         description: "启用 ZRAM 增强算法"
         required: true

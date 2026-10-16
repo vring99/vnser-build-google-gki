@@ -62,7 +62,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: false
+        default: true
       use_zram:
         required: true
         type: boolean
@@ -106,14 +106,14 @@ jobs:
     steps:
       - name: Select BakaSU Pro version
         id: bakasu_version
-        if: inputs.ksu_variant == 'BakaSU'
+        if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
             35233) commit=7797d5ab79fc20577086729304fb50f6bc20f748 ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
-          echo "BakaSU $BAKASU_VERSION: $commit"
+          echo "BakaSU Pro $BAKASU_VERSION: $commit"
 
       # ==================== 构建信息摘要 ====================
       # 打印当前构建的所有配置信息，方便调试和追踪
@@ -276,8 +276,8 @@ jobs:
               echo "ShirkNeko 仓库未找到分支 $SUSFS_BRANCH，回退到 simonpunk 原版..."
               git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
             fi
-          elif [ "${{ inputs.ksu_variant }}" == "BakaSU" ]; then
-            # BakaSU 使用 simonpunk 的原版 SUSFS
+          elif [ "${{ inputs.ksu_variant }}" == "BakaSU Pro" ]; then
+            # BakaSU Pro 使用 simonpunk 的原版 SUSFS
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
           else
             # 其他变体使用 simonpunk 的原版 SUSFS
@@ -467,9 +467,9 @@ jobs:
               case "$variant_input" in
                 "Next") BRANCH="-s stable" ;;
                 "SukiSU") BRANCH="-s main" ;;
-                "BakaSU") BRANCH="-s main" ;;
+                "BakaSU Pro") BRANCH="-s main" ;;
                 #34933
-                #"BakaSU") BRANCH="-s 3f9c42e8" ;;
+                #"BakaSU Pro") BRANCH="-s 3f9c42e8" ;;
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 *) BRANCH="-" ;;
               esac
@@ -478,7 +478,7 @@ jobs:
               case "$variant_input" in
                 "Official"|"MKSU") BRANCH="-s main" ;;
                 "Next") BRANCH="-s dev" ;;
-                "SukiSU"|"BakaSU") BRANCH="-s builtin" ;;
+                "SukiSU"|"BakaSU Pro") BRANCH="-s builtin" ;;
                 *) echo "未知变体: $variant_input" >&2; exit 1 ;;
               esac
               ;;
@@ -488,8 +488,8 @@ jobs:
               ;;
           esac
 
-          # SukiSU/BakaSU 不启用 SUSFS 时强制使用 main 分支
-          if [ "$variant_input" = "SukiSU" ] || [ "$variant_input" = "BakaSU" ]; then
+          # SukiSU/BakaSU Pro 不启用 SUSFS 时强制使用 main 分支
+          if [ "$variant_input" = "SukiSU" ] || [ "$variant_input" = "BakaSU Pro" ]; then
             if [ "${{ inputs.enable_susfs }}" = "false" ]; then
               BRANCH="-s main"
             fi
@@ -508,7 +508,7 @@ jobs:
             fi
           fi
 
-          if [ "$variant_input" = "BakaSU" ]; then
+          if [ "$variant_input" = "BakaSU Pro" ]; then
             BRANCH="-s $BAKASU_COMMIT"
           fi
 
@@ -568,12 +568,12 @@ jobs:
               echo "添加 SukiSU..."
               curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
               ;;
-            "BakaSU")
-              echo "添加 BakaSU $BAKASU_VERSION..."
+            "BakaSU Pro")
+              echo "添加 BakaSU Pro $BAKASU_VERSION..."
               curl -fLSs "https://raw.githubusercontent.com/vring99/BakaSU/$BAKASU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/bakasu-setup.sh"
               bash "$RUNNER_TEMP/bakasu-setup.sh" "$BAKASU_COMMIT"
               if [ "$(git -C KernelSU rev-parse HEAD)" != "$BAKASU_COMMIT" ]; then
-                echo "::error::BakaSU checkout does not match pinned commit $BAKASU_COMMIT"
+                echo "::error::BakaSU Pro checkout does not match pinned commit $BAKASU_COMMIT"
                 exit 1
               fi
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
@@ -686,8 +686,8 @@ jobs:
               patch -p1 < 10_enable_susfs_for_ksu.patch || true
               cd ..
               ;;
-            "Next"|"SukiSU"|"BakaSU")
-              echo "Next/SukiSU/BakaSU 使用内置 SUSFS 支持"
+            "Next"|"SukiSU"|"BakaSU Pro")
+              echo "Next/SukiSU/BakaSU Pro 使用内置 SUSFS 支持"
               ;;
           esac
 
@@ -697,7 +697,7 @@ jobs:
           patch -p1 < "$SUSFS_PATCH" || true
 
           # 应用版本特定修复 (所有 KSU 变体)
-          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "BakaSU" ]; then
+          if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "BakaSU Pro" ]; then
             CURRENT_SUB="${{ inputs.sub_level }}"
             if [[ ! "$CURRENT_SUB" =~ ^[0-9]+$ ]]; then
               CURRENT_SUB=99999
@@ -827,7 +827,7 @@ jobs:
                 sed -i '/#include <linux\/dma-buf.h>/a #include <linux\/susfs_def.h>' ./fs/proc/base.c
                 sed -i '/#include <linux\/dma-buf.h>/a #ifdef CONFIG_KSU_SUSFS_SUS_MAP' ./fs/proc/base.c
               fi
-              # 修复 BakaSU: 缺少 susfs.h 导致编译报 undeclared identifier
+              # 修复 BakaSU Pro: 缺少 susfs.h 导致编译报 undeclared identifier
               if grep -q 'SUSFS_IS_INODE_SUS_MAP\|SUSFS_IS_INODE_OPEN_REDIRECT' ./fs/proc/base.c && ! grep -qF '#include <linux/susfs.h>' ./fs/proc/base.c; then
                 if ! grep -qF '#include <linux/dma-buf.h>' ./fs/proc/base.c; then
                   sed -i '/#include <linux\/cpufreq_times.h>/a #include <linux\/dma-buf.h>' ./fs/proc/base.c
@@ -1064,7 +1064,7 @@ jobs:
 
       - name: Configure native BakaSU Pro integration
         id: bakasu_susfs_setup
-        if: inputs.ksu_variant == 'BakaSU'
+        if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
             --enable KALLSYMS --enable KALLSYMS_ALL --disable KSU_MULTI_MANAGER_SUPPORT
@@ -1229,7 +1229,7 @@ jobs:
       # ==================== KPM 补丁 (仅 SukiSU) ====================
       # 为 SukiSU 应用 KPM (Kernel Patch Module) 补丁
       #- name: 应用 KPM 补丁 (SukiSU/BakaSU/Next)
-      #  if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'BakaSU' || inputs.ksu_variant == 'Next')
+      #  if: inputs.use_kpm && (inputs.ksu_variant == 'SukiSU' || inputs.ksu_variant == 'BakaSU Pro' || inputs.ksu_variant == 'Next')
       #  run: |
       ##    TARGET_PATH="$KERNEL_ROOT/common/out/arch/arm64/boot"
 

@@ -11,7 +11,7 @@ on:
         description: "启用 Unicode 绕过修复"
         required: false
         type: boolean
-        default: false
+        default: true
 
 concurrency:
   group: kernel-test-a12-5-10-236-${{ github.ref }}
@@ -28,7 +28,7 @@ jobs:
       sub_level: "236"
       os_patch_level: "2025-05"
       revision: "r4"
-      ksu_variant: "BakaSU"
+      ksu_variant: "BakaSU Pro"
       ksu_branch: "Stable(标准)"
       bakasu_version: "35233"
       version: ""
