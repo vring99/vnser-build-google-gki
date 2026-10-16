@@ -50,9 +50,9 @@ class NativePreflightTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "7797d5ab79fc20577086729304fb50f6bc20f748"
+        pin = "067d7083f516e42a165a8d2df449267cb846b55e"
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35233)
+        self.assertEqual(count + 30700, 35235)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
 

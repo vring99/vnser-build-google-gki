@@ -12,7 +12,7 @@ on:
       bakasu_version:
         required: false
         type: string
-        default: "35233"
+        default: "35235"
     outputs:
       susVer:
         description: "The fetched SUSFS version number"
@@ -86,7 +86,7 @@ jobs:
             echo "This is the BakaSU Pro variant"
             git clone --branch codex/bakasu-pro-latest https://github.com/vring99/BakaSU.git KernelSU
             case "$BAKASU_VERSION" in
-              35233) BAKASU_COMMIT=7797d5ab79fc20577086729304fb50f6bc20f748 ;;
+              35235) BAKASU_COMMIT=067d7083f516e42a165a8d2df449267cb846b55e ;;
               *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
             esac
             git -C KernelSU checkout --detach "$BAKASU_COMMIT"

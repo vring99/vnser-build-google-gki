@@ -1,4 +1,4 @@
-name: BakaSU Pro 35233 / SUSFS SELinux - All GKI Kernels
+name: BakaSU Pro 35235 / SUSFS SELinux - All GKI Kernels
 
 permissions:
   contents: write
@@ -14,18 +14,18 @@ on:
         default: true
 
 concurrency:
-  group: kernel-bakasu-35233-${{ github.ref }}
+  group: kernel-bakasu-35235-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-a12-5-10:
-    name: "BakaSU Pro 35233 / a12-5-10"
+    name: "BakaSU Pro 35235 / a12-5-10"
     uses: ./.github/workflows/kernel-a12-5-10.yml
     secrets: inherit
     with:
       kernelsu_variant: "BakaSU Pro"
       kernelsu_branch: "Stable(标准)"
-      bakasu_version: "35233"
+      bakasu_version: "35235"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
       use_uni: ${{ inputs.use_uni }}
@@ -36,13 +36,13 @@ jobs:
       onlyAk3: false
 
   build-a13-5-15:
-    name: "BakaSU Pro 35233 / a13-5-15"
+    name: "BakaSU Pro 35235 / a13-5-15"
     uses: ./.github/workflows/kernel-a13-5-15.yml
     secrets: inherit
     with:
       kernelsu_variant: "BakaSU Pro"
       kernelsu_branch: "Stable(标准)"
-      bakasu_version: "35233"
+      bakasu_version: "35235"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
       use_uni: ${{ inputs.use_uni }}
@@ -52,13 +52,13 @@ jobs:
       called_from_main: true
 
   build-a14-6-1:
-    name: "BakaSU Pro 35233 / a14-6-1"
+    name: "BakaSU Pro 35235 / a14-6-1"
     uses: ./.github/workflows/kernel-a14-6-1.yml
     secrets: inherit
     with:
       kernelsu_variant: "BakaSU Pro"
       kernelsu_branch: "Stable(标准)"
-      bakasu_version: "35233"
+      bakasu_version: "35235"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true
       use_uni: ${{ inputs.use_uni }}
@@ -68,13 +68,13 @@ jobs:
       called_from_main: true
 
   build-a15-6-6:
-    name: "BakaSU Pro 35233 / a15-6-6"
+    name: "BakaSU Pro 35235 / a15-6-6"
     uses: ./.github/workflows/kernel-a15-6-6.yml
     secrets: inherit
     with:
       kernelsu_variant: "BakaSU Pro"
       kernelsu_branch: "Stable(标准)"
-      bakasu_version: "35233"
+      bakasu_version: "35235"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: false
       use_uni: ${{ inputs.use_uni }}
@@ -84,13 +84,13 @@ jobs:
       called_from_main: true
 
   build-a16-6-12:
-    name: "BakaSU Pro 35233 / a16-6-12"
+    name: "BakaSU Pro 35235 / a16-6-12"
     uses: ./.github/workflows/kernel-a16-6-12.yml
     secrets: inherit
     with:
       kernelsu_variant: "BakaSU Pro"
       kernelsu_branch: "Stable(标准)"
-      bakasu_version: "35233"
+      bakasu_version: "35235"
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: false
       use_uni: ${{ inputs.use_uni }}
