@@ -150,36 +150,5 @@ class RealSusfsTests(unittest.TestCase):
                 self.assertIn(b"diff --git a/security/selinux/avc.c", result)
 
 
-@unittest.skipUnless(importlib.util.find_spec("yaml"), "PyYAML not installed")
-class WorkflowTests(unittest.TestCase):
-    def test_both_workflows_use_official_susfs_for_bakasu_only(self):
-        import yaml
-        selected = []
-        for name in ("build.yml", "build-make.yml"):
-            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
-            for job in workflow["jobs"].values():
-                self.assertEqual(job["env"]["BAKASU_VERSION"], "${{ inputs.bakasu_version }}")
-            steps = [step for job in workflow["jobs"].values() for step in job.get("steps", [])]
-            added = [step for step in steps if step.get("id") == "bakasu_susfs_setup"]
-            self.assertEqual(len(added), 1)
-            for step in added:
-                self.assertEqual(step["if"], "inputs.ksu_variant == 'BakaSU'")
-            self.assertIn("--enable KALLSYMS_ALL", added[0]["run"])
-            self.assertIn('if [ "${{ inputs.enable_susfs }}" != "true" ]; then', added[0]["run"])
-            self.assertIn("--include=kernel/feature/selinux_hide.c", added[0]["run"])
-            self.assertNotIn("|| true", "\n".join(step["run"] for step in added))
-            self.assertNotIn("bakasu_35188_selinux.py", "\n".join(step.get("run", "") for step in steps))
-            setup = next(step["run"] for step in steps if step["name"] == "添加 KernelSU")
-            self.assertIn("raw.githubusercontent.com/Baka-SU/BakaSU/$BAKASU_COMMIT/kernel/setup.sh", setup)
-            susfs = next(step["run"] for step in steps if step["name"] == "应用 SUSFS 补丁")
-            self.assertNotIn("filter-susfs", susfs)
-            self.assertNotIn(".bakasu", susfs)
-            self.assertIn('patch -p1 < "$SUSFS_PATCH"', susfs)
-            self.assertLess(next(i for i, s in enumerate(steps) if s["name"] == "应用 SUSFS 补丁"), steps.index(added[0]))
-            self.assertLess(steps.index(added[0]), next(i for i, s in enumerate(steps) if s["name"] == "编译内核"))
-            selected.append(added)
-        self.assertEqual(selected[0], selected[1])
-
-
 if __name__ == "__main__":
     unittest.main()

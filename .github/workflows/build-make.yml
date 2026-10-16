@@ -38,8 +38,8 @@ on:
       bakasu_version:
         required: false
         type: string
-        description: "BakaSU version (35227 or 35226)"
-        default: "35226"
+        description: "BakaSU Pro version (35233)"
+        default: "35233"
 
       # ==================== 可选配置 ====================
       version:
@@ -99,20 +99,18 @@ jobs:
     # ccache 配置用于加速重复编译
     env:
       BAKASU_VERSION: ${{ inputs.bakasu_version }}
-      SUSFS_KSU_COMMIT: 0a1f3ff71719fa2d6ec15f5568dac27fdb957fcc
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
 
     steps:
-      - name: Select BakaSU version
+      - name: Select BakaSU Pro version
         id: bakasu_version
         if: inputs.ksu_variant == 'BakaSU'
         run: |
           case "$BAKASU_VERSION" in
-            35227) commit=f4435f007b16f61705089ff982e3f981a6017979 ;;
-            35226) commit=59afa46b325126b12a48234063cd0c2a6b735b57 ;;
-            *) echo "::error::Unsupported BakaSU version: $BAKASU_VERSION"; exit 1 ;;
+            35233) commit=7797d5ab79fc20577086729304fb50f6bc20f748 ;;
+            *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
           echo "BakaSU $BAKASU_VERSION: $commit"
@@ -572,7 +570,7 @@ jobs:
               ;;
             "BakaSU")
               echo "添加 BakaSU $BAKASU_VERSION..."
-              curl -fLSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$BAKASU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/bakasu-setup.sh"
+              curl -fLSs "https://raw.githubusercontent.com/vring99/BakaSU/$BAKASU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/bakasu-setup.sh"
               bash "$RUNNER_TEMP/bakasu-setup.sh" "$BAKASU_COMMIT"
               if [ "$(git -C KernelSU rev-parse HEAD)" != "$BAKASU_COMMIT" ]; then
                 echo "::error::BakaSU checkout does not match pinned commit $BAKASU_COMMIT"
@@ -584,7 +582,7 @@ jobs:
               KSU_GIT_VERSION=$(git rev-list --count HEAD)
               KSU_VERSION=$((KSU_GIT_VERSION + 30700))
               if [ "$KSU_VERSION" != "$BAKASU_VERSION" ]; then
-                echo "::error::BakaSU version $KSU_VERSION does not match selected $BAKASU_VERSION"
+                echo "::error::BakaSU Pro version $KSU_VERSION does not match selected $BAKASU_VERSION"
                 exit 1
               fi
               cd ../
@@ -1064,69 +1062,18 @@ jobs:
           CONFIG_KSU_SUSFS_SUS_MAP=y
           EOF
 
-      - name: 接入 SUSFS 官方 SELinux 实现并解除 BakaSU 编译阻断
+      - name: Configure native BakaSU Pro integration
         id: bakasu_susfs_setup
         if: inputs.ksu_variant == 'BakaSU'
         run: |
           "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
-            --enable KALLSYMS --enable KALLSYMS_ALL
-          if [ "${{ inputs.enable_susfs }}" != "true" ]; then
-            exit 0
-          fi
+            --enable KALLSYMS --enable KALLSYMS_ALL --disable KSU_MULTI_MANAGER_SUPPORT
           KSU_SOURCE="$KERNEL_ROOT/KernelSU"
-          SUSFS_SOURCE="$SUSFS4KSU"
-          OFFICIAL_ROOT="$RUNNER_TEMP/susfs-official-selinux"
-          mkdir -p "$OFFICIAL_ROOT/kernel/feature"
-          curl -fLSs --retry 3 \
-            "https://raw.githubusercontent.com/tiann/KernelSU/$SUSFS_KSU_COMMIT/kernel/feature/selinux_hide.c" \
-            -o "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c"
-          # Generate the official post-patch file without porting its code.
-          git -C "$OFFICIAL_ROOT" apply --include=kernel/feature/selinux_hide.c \
-            "$SUSFS_SOURCE/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"
-          # SUSFS exposes direct functions; their old pointer guards are always true.
-          python3 - "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c" <<'PY'
-          import sys
-          from pathlib import Path
-          path = Path(sys.argv[1])
-          source = path.read_text(encoding="utf-8")
-          replacements = (
-              ("security_dump_masked_av_fn",
-               '    if (security_dump_masked_av_fn)\n'
-               '        security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");',
-               '    security_dump_masked_av_fn(policydb, scontext, tcontext, tclass, masked, "bounds");'),
-              ("context_struct_compute_av_fn",
-               '    if (context_struct_compute_av_fn) {\n'
-               '        context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);\n'
-               '    } else {\n'
-               '        context_struct_compute_av(policydb, scontext, tcontext, tclass, avd, NULL);\n'
-               '    }',
-               '    context_struct_compute_av_fn(policydb, scontext, tcontext, tclass, avd, NULL);'),
-          )
-          for symbol, old, new in replacements:
-              if f"extern void {symbol}(" not in source:
-                  raise SystemExit(f"Expected SUSFS direct function declaration: {symbol}")
-              count = source.count(old)
-              if count == 1:
-                  source = source.replace(old, new, 1)
-              elif count != 0 or source.count(new) != 1:
-                  raise SystemExit(f"Unexpected SUSFS function call layout: {symbol}")
-          path.write_bytes(source.encode("utf-8"))
-          print("Removed redundant guards around SUSFS direct SELinux functions")
-          PY
-          cp "$OFFICIAL_ROOT/kernel/feature/selinux_hide.c" "$KSU_SOURCE/kernel/feature/selinux_hide.c"
-          python3 - "$KSU_SOURCE/kernel/tools/susfs_compat.mk" <<'PY'
-          import sys
-          from pathlib import Path
-          path = Path(sys.argv[1])
-          source = path.read_text()
-          stop = ("$(info -- $(REPO_NAME): susfs has NOT update with latest KernelSU source)\n"
-                  "$(info -- $(REPO_NAME): Please wait simonpunk update)\n"
-                  "$(error Please wait susfs update.)")
-          if source.count(stop) != 1:
-              raise SystemExit("Unexpected BakaSU SUSFS build guard; source left unchanged")
-          path.write_text(source.replace(stop, "", 1))
-          print("Official SUSFS SELinux implementation installed; BakaSU build guard removed")
-          PY
+          test -f "$KSU_SOURCE/kernel/feature/selinux_hide_susfs.c"
+          git -C "$KSU_SOURCE" diff --exit-code -- kernel/feature/selinux_hide.c \
+            kernel/feature/selinux_hide_susfs.c kernel/tools/susfs_compat.mk \
+            kernel/manager/apk_sign.c kernel/manager/manager_sign.h
+          echo "Using BakaSU Pro native integration; no SELinux source overlay"
 
       # ==================== 配置内核名称 ====================
       - name: 配置内核名称

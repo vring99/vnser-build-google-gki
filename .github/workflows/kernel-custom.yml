@@ -66,13 +66,12 @@ on:
           - Other(其他/指定)
         default: Stable(标准)
       bakasu_version:
-        description: "BakaSU version"
+        description: "BakaSU Pro version"
         required: false
         type: choice
         options:
-          - "35227"
-          - "35226"
-        default: "35226"
+          - "35233"
+        default: "35233"
 
       # ==================== 可选配置 ====================
       version:
@@ -135,7 +134,7 @@ jobs:
       revision: ${{ inputs.revision || '' }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35233' }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -151,4 +150,4 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      bakasu_version: ${{ inputs.bakasu_version || '35226' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35233' }}
