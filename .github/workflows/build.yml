@@ -1341,6 +1341,21 @@ jobs:
             done
           fi
 
+      - name: 压缩 Boot 镜像
+        if: ${{ !inputs.onlyAk3 }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+
+          images = sorted([*Path(".").glob("*-boot.img"), *Path(".").glob("*-boot-gz.img")])
+          for image in images:
+              archive_path = image.with_name(image.name + ".zip")
+              with ZipFile(archive_path, "w", compression=ZIP_DEFLATED, compresslevel=9) as archive:
+                  archive.write(image, arcname=image.name)
+              print(f"{image.name} -> {archive_path.name}")
+          PY
+
       # ==================== 上传构建产物 ====================
       - name: 上传构建产物
         if: ${{ !inputs.onlyAk3 }}
@@ -1350,8 +1365,8 @@ jobs:
           name: ${{ inputs.ksu_variant }}(${{ env.KSUVER }})_kernel-${{ env.CONFIG }}
           path: |
             *AnyKernel3.zip
-            *-boot.img
-            *-boot-gz.img
+            *-boot.img.zip
+            *-boot-gz.img.zip
           compression-level: 9
 
       - name: 上传编译资产 (仅 AK3)
