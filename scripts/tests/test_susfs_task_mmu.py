@@ -27,6 +27,11 @@ int mapped(int inode) { return SUSFS_IS_INODE_SUS_MAP(inode); }
 class TaskMmuHeaderTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        workflow = yaml.safe_load(
+            (ROOT / ".github/workflows/kernel-a13-5-15.yml").read_text(encoding="utf-8"))
+        cls.sublevels = tuple(int(entry["sub_level"]) for entry in
+                              workflow["jobs"]["build-kernels-a13-5-15"]
+                              ["strategy"]["matrix"]["include"])
         cls.runs = {}
         for name in BUILDERS:
             workflow = yaml.safe_load(
@@ -54,7 +59,7 @@ class TaskMmuHeaderTests(unittest.TestCase):
 
     def test_repairs_supported_sublevels_in_both_builders(self):
         for name, run in self.runs.items():
-            for sublevel in (149, 151, 196, 197, 206):
+            for sublevel in self.sublevels:
                 with self.subTest(builder=name, sublevel=sublevel):
                     with tempfile.TemporaryDirectory() as directory:
                         repaired = self.repair(Path(directory), run, sublevel)
@@ -62,7 +67,7 @@ class TaskMmuHeaderTests(unittest.TestCase):
 
     def test_leaves_other_versions_and_unaffected_sources_unchanged(self):
         cases = [
-            {"sublevel": 148}, {"sublevel": 207},
+            {"sublevel": 73}, {"sublevel": 207},
             {"sublevel": 149, "android": "android12"},
             {"sublevel": 149, "kernel": "6.1"},
             {"sublevel": 149, "source": "#include <linux/sched/mm.h>\n"},
@@ -89,24 +94,25 @@ class TaskMmuHeaderTests(unittest.TestCase):
     @unittest.skipUnless(CLANG, "Clang not supplied")
     def test_partial_patch_compiles_after_repair(self):
         for name, run in self.runs.items():
-            with self.subTest(builder=name):
-                with tempfile.TemporaryDirectory() as directory:
-                    root = Path(directory)
-                    include = root / "include"
-                    (include / "linux/sched").mkdir(parents=True)
-                    (include / "linux/sched/mm.h").touch()
-                    (include / "linux/susfs_def.h").write_text(
-                        "#define SUSFS_IS_INODE_OPEN_REDIRECT(inode) (inode)\n"
-                        "#define SUSFS_IS_INODE_SUS_MAP(inode) (inode)\n")
-                    self.repair(root, run, 149)
-                    command = [CLANG, "-fsyntax-only", "-std=gnu11", "-Werror",
-                               "-I", str(include), str(root / "fs/proc/task_mmu.c")]
-                    for defines in ([], ["CONFIG_KSU_SUSFS_SUS_MAP"],
-                                    ["CONFIG_KSU_SUSFS_OPEN_REDIRECT"],
-                                    ["CONFIG_KSU_SUSFS_SUS_MAP", "CONFIG_KSU_SUSFS_OPEN_REDIRECT"]):
-                        result = subprocess.run(command + ["-D" + d for d in defines],
-                                                capture_output=True, encoding="utf-8")
-                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            for sublevel in (74, 149):
+                with self.subTest(builder=name, sublevel=sublevel):
+                    with tempfile.TemporaryDirectory() as directory:
+                        root = Path(directory)
+                        include = root / "include"
+                        (include / "linux/sched").mkdir(parents=True)
+                        (include / "linux/sched/mm.h").touch()
+                        (include / "linux/susfs_def.h").write_text(
+                            "#define SUSFS_IS_INODE_OPEN_REDIRECT(inode) (inode)\n"
+                            "#define SUSFS_IS_INODE_SUS_MAP(inode) (inode)\n")
+                        self.repair(root, run, sublevel)
+                        command = [CLANG, "-fsyntax-only", "-std=gnu11", "-Werror",
+                                   "-I", str(include), str(root / "fs/proc/task_mmu.c")]
+                        for defines in ([], ["CONFIG_KSU_SUSFS_SUS_MAP"],
+                                        ["CONFIG_KSU_SUSFS_OPEN_REDIRECT"],
+                                        ["CONFIG_KSU_SUSFS_SUS_MAP", "CONFIG_KSU_SUSFS_OPEN_REDIRECT"]):
+                            result = subprocess.run(command + ["-D" + d for d in defines],
+                                                    capture_output=True, encoding="utf-8")
+                            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":
