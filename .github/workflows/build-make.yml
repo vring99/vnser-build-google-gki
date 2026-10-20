@@ -38,8 +38,8 @@ on:
       bakasu_version:
         required: false
         type: string
-        description: "BakaSU Pro version (35238)"
-        default: "35238"
+        description: "BakaSU Pro version (35240)"
+        default: "35240"
 
       # ==================== 可选配置 ====================
       version:
@@ -109,7 +109,7 @@ jobs:
         if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
-            35238) commit=a622823ade634bb5f08c595d3d2e3aef1da2a844 ;;
+            35240) commit=150a0b559f0d75145505297129fb68f0f42f5823 ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
