@@ -50,8 +50,8 @@ on:
         description: "BakaSU Pro version"
         type: choice
         options:
-          - "35236"
-        default: "35236"
+          - "35237"
+        default: "35237"
         required: false
       kernelsu_branch:
         description: "KSU 分支"
@@ -124,7 +124,7 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
-      bakasu_version: ${{ inputs.bakasu_version || '35236' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35237' }}
 
   # ==================== Android 12 - 5.10 构建 ====================
   build-a12-5-10:
@@ -134,7 +134,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35236' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35237' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -152,7 +152,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35236' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35237' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -170,7 +170,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35236' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35237' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -188,7 +188,7 @@ jobs:
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35236' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35237' }}
       version: ${{ inputs.version }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}
@@ -257,7 +257,7 @@ jobs:
       REPO_OWNER: ${{ github.repository_owner }}
       REPO_NAME: ${{ github.event.repository.name }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      BAKASU_VERSION: ${{ inputs.bakasu_version || '35236' }}
+      BAKASU_VERSION: ${{ inputs.bakasu_version || '35237' }}
 
     steps:
       # ==================== 设置显示名称 ====================
@@ -361,7 +361,7 @@ jobs:
 
           if [[ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]]; then
             case "$BAKASU_VERSION" in
-              35236) KSU_REF=8cd0b7bc6014b354214de41a6b4cccdecdef4528 ;;
+              35237) KSU_REF=68f9e322f574362fcb77342fe6c4a515a4cdf342 ;;
               *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
             esac
             KSU_URL="https://github.com/$REPO_URL2/commit/$KSU_REF"

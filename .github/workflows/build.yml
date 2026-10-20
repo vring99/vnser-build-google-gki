@@ -38,8 +38,8 @@ on:
       bakasu_version:
         required: false
         type: string
-        description: "BakaSU Pro version (35236)"
-        default: "35236"
+        description: "BakaSU Pro version (35237)"
+        default: "35237"
 
       # ==================== 可选配置 ====================
       version:
@@ -109,7 +109,7 @@ jobs:
         if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
-            35236) commit=8cd0b7bc6014b354214de41a6b4cccdecdef4528 ;;
+            35237) commit=68f9e322f574362fcb77342fe6c4a515a4cdf342 ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
@@ -1072,6 +1072,7 @@ jobs:
           test -f "$KSU_SOURCE/kernel/feature/selinux_hide.c"
           git -C "$KSU_SOURCE" diff --exit-code -- kernel/Kbuild \
             kernel/feature/selinux_hide.c kernel/feature/selinux_hide.h kernel/tools/susfs_compat.mk \
+            kernel/compat/susfs_preinit.c kernel/compat/susfs_preinit.h \
             kernel/manager/apk_sign.c kernel/manager/manager_sign.h
           echo "Using BakaSU Pro native integration; no SELinux source overlay"
 

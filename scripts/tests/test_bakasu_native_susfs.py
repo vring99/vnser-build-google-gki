@@ -11,6 +11,7 @@ GKI = (ROOT / ".github/workflows/build.yml").exists()
 BUILDERS = ("build.yml", "build-make.yml") if GKI else ("Build Kernel OnePlus.yml", "build-kernel-original-make.yml")
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
 SOURCES = ("kernel/Kbuild", "kernel/feature/selinux_hide.c", "kernel/feature/selinux_hide.h",
+           "kernel/compat/susfs_preinit.c", "kernel/compat/susfs_preinit.h",
            "kernel/tools/susfs_compat.mk", "kernel/manager/apk_sign.c", "kernel/manager/manager_sign.h")
 
 class NativePreflightTests(unittest.TestCase):
@@ -53,9 +54,9 @@ class NativePreflightTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "8cd0b7bc6014b354214de41a6b4cccdecdef4528"
+        pin = "68f9e322f574362fcb77342fe6c4a515a4cdf342"
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35236)
+        self.assertEqual(count + 30700, 35237)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
 
