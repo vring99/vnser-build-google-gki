@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GKI = (ROOT / ".github/workflows/build.yml").exists()
 BUILDERS = ("build.yml", "build-make.yml") if GKI else ("Build Kernel OnePlus.yml", "build-kernel-original-make.yml")
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
-SOURCES = ("kernel/feature/selinux_hide.c", "kernel/feature/selinux_hide_susfs.c",
+SOURCES = ("kernel/Kbuild", "kernel/feature/selinux_hide.c", "kernel/feature/selinux_hide.h",
            "kernel/tools/susfs_compat.mk", "kernel/manager/apk_sign.c", "kernel/manager/manager_sign.h")
 
 class NativePreflightTests(unittest.TestCase):
@@ -43,16 +43,19 @@ class NativePreflightTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertEqual(before, {s: (ksu / s).read_bytes() for s in SOURCES})
                 self.assertIn("--disable\nKSU_MULTI_MANAGER_SUPPORT", (workspace / "args").read_text())
-                (ksu / SOURCES[0]).write_text("old overlay\n")
-                result = subprocess.run([BASH, "-e", "-c", run], env=env, capture_output=True)
-                self.assertNotEqual(result.returncode, 0)
+                for source in SOURCES:
+                    with self.subTest(builder=name, source=source):
+                        (ksu / source).write_text("old overlay\n")
+                        result = subprocess.run([BASH, "-e", "-c", run], env=env, capture_output=True)
+                        self.assertNotEqual(result.returncode, 0)
+                        (ksu / source).write_bytes(before[source])
 
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "067d7083f516e42a165a8d2df449267cb846b55e"
+        pin = "8cd0b7bc6014b354214de41a6b4cccdecdef4528"
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35235)
+        self.assertEqual(count + 30700, 35236)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
 
