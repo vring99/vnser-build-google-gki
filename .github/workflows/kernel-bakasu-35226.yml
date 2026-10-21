@@ -98,3 +98,13 @@ jobs:
       use_kpm: false
       cancel_susfs: false
       called_from_main: true
+
+  build-a17-6-18:
+    name: "BakaSU Pro 35240 / a17-6-18 / no SUSFS"
+    uses: ./.github/workflows/kernel-a17-6-18.yml
+    secrets: inherit
+    with:
+      bakasu_version: "35240"
+      use_uni: ${{ inputs.use_uni }}
+      cancel_susfs: true
+      onlyAk3: false

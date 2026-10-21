@@ -48,6 +48,15 @@
 
 ---
 
+## Android 17 / 6.18 编译
+
+- Actions 入口：`内核构建 - Android 17 (6.18)`；BakaSU Pro 全量编译也已包含此版本系列。
+- 初始矩阵：`6.18.20 / 2026-04`、`6.18.21 / 2026-06`、`6.18.32 / 2026-09`。
+- 使用 BakaSU Pro 35240 和官方 manifest / Kleaf 工具链；默认关闭 SUSFS，使用 Tracepoint Hook。
+- 保留 `禁用 SUSFS` 开关，未来官方发布 `gki-android17-6.18` 分支及对应补丁后可取消勾选。目前提前开启会明确报错，不会套用 6.12 补丁。
+- ZRAM 增强、KPM、BBG 和一加专用补丁不接入此入口；Unicode 开关保留。默认输出 AK3，以及分别压缩的 boot / boot-gz 镜像。
+- 此入口的工作流和本地回归验证不等于完整内核编译或真机启动验证。
+
 ## 📚 文档与指南
 
 详细说明请查阅 [**GitHub Wiki（中英双语）**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)

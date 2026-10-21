@@ -91,7 +91,11 @@ class UnicodeToggleTests(unittest.TestCase):
             for target, job in callees(self.workflows[name]):
                 if target in self.chain:
                     with self.subTest(workflow=name, target=target):
-                        self.assertIn(job["with"]["use_kpm"], (False, "${{ inputs.use_kpm }}"))
+                        inputs = events(self.workflows[target])["workflow_call"]["inputs"]
+                        if "use_kpm" in inputs:
+                            self.assertIn(job["with"]["use_kpm"], (False, "${{ inputs.use_kpm }}"))
+                        else:
+                            self.assertNotIn("use_kpm", job["with"])
 
     def test_all_callers_preserve_false_without_truthy_fallback(self):
         for name in self.chain:

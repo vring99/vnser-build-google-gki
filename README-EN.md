@@ -48,6 +48,15 @@ English | [**简体中文**](README.md)
 
 ---
 
+## Android 17 / 6.18 Builds
+
+- Actions entry: `内核构建 - Android 17 (6.18)`, also included in the BakaSU Pro all-family workflow.
+- Initial matrix: `6.18.20 / 2026-04`, `6.18.21 / 2026-06`, `6.18.32 / 2026-09`.
+- Uses BakaSU Pro 35240 with the official manifest and Kleaf toolchains. SUSFS is disabled by default; BakaSU uses Tracepoint hooks.
+- The existing SUSFS switch is reserved for the future official `gki-android17-6.18` branch and matching patch. Enabling it prematurely fails explicitly; no 6.12 SUSFS patch is reused.
+- ZRAM enhancements, KPM, BBG and OnePlus-specific patches are not enabled here. The Unicode toggle remains available. Outputs default to AK3 plus individually compressed boot and boot-gz images.
+- Workflow and local regression checks do not prove a complete kernel build or device boot.
+
 ## 📚 Documentation & Guides
 
 For detailed instructions, please refer to the [**GitHub Wiki (bilingual CN/EN)**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)

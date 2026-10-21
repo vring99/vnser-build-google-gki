@@ -82,7 +82,7 @@ class ProWorkflowTests(unittest.TestCase):
     def test_all_family_matrix_preserved(self):
         name = "kernel-bakasu-35226.yml" if GKI else "Build Kernel OnePlus-35226.yml"
         jobs = read(name)["jobs"]
-        self.assertEqual(len(jobs), 5 if GKI else 2)
+        self.assertEqual(len(jobs), 6 if GKI else 2)
         for job in jobs.values():
             self.assertEqual(job["with"][INPUT], "35240")
             if GKI and job["uses"].endswith(("kernel-a15-6-6.yml", "kernel-a16-6-12.yml")):

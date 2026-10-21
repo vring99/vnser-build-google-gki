@@ -93,12 +93,13 @@ jobs:
   build-kernel:
     name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}-${{ inputs.ksu_variant }}"
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.android_version == 'android17' && inputs.kernel_version == '6.18' && 120 || 60 }}
 
     # ==================== 环境变量配置 ====================
     # ccache 配置用于加速重复编译
     env:
       BAKASU_VERSION: ${{ inputs.bakasu_version }}
+      SUSFS_LATEST_COMMIT_DATE: "disabled"
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -264,12 +265,28 @@ jobs:
       - name: 克隆依赖仓库
         run: |
           ANYKERNEL_BRANCH="gki-2.0"
-          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
           echo "克隆 AnyKernel3..."
           git clone https://github.com/WildKernels/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
           rm -rf AnyKernel3/.git
 
+          echo "准备补丁资源..."
+          git clone https://github.com/WildKernels/kernel_patches.git
+          git clone https://github.com/ShirkNeko/SukiSU_patch.git
+          echo "使用当前仓库补丁目录: $ZZH_PATCHES"
+          git clone https://github.com/Numbersf/Action-Build.git --depth=1
+
+      - name: Clone SUSFS when enabled
+        id: clone_susfs
+        if: inputs.enable_susfs
+        run: |
+          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          if [[ "${{ inputs.android_version }}" == "android17" && "${{ inputs.kernel_version }}" == "6.18" ]]; then
+            if ! git ls-remote --exit-code --heads https://gitlab.com/simonpunk/susfs4ksu.git "refs/heads/$SUSFS_BRANCH" >/dev/null; then
+              echo "::error::Official $SUSFS_BRANCH is unavailable. Keep SUSFS disabled until official support is published."
+              exit 1
+            fi
+          fi
           echo "克隆 SUSFS (分支: $SUSFS_BRANCH)..."
           if [ "${{ inputs.ksu_variant }}" == "SukiSU" ]; then
             if ! git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH" 2>/dev/null; then
@@ -303,15 +320,21 @@ jobs:
           echo "SUSFS_LATEST_COMMIT_DATE=$SUSFS_LATEST_COMMIT_DATE" >> $GITHUB_ENV
           echo "SUSFS 仓库最新提交日期: $SUSFS_LATEST_COMMIT_DATE"
 
-          echo "准备补丁资源..."
-          git clone https://github.com/WildKernels/kernel_patches.git
-          git clone https://github.com/ShirkNeko/SukiSU_patch.git
-          echo "使用当前仓库补丁目录: $ZZH_PATCHES"
-          git clone https://github.com/Numbersf/Action-Build.git --depth=1
+          test -f "$SUSFS4KSU/kernel_patches/50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
+
+      - name: Sync official Android 17 source and toolchains
+        id: android17_sync
+        if: inputs.android_version == 'android17' && inputs.kernel_version == '6.18'
+        env:
+          ANDROID17_PATCH_LEVEL: ${{ inputs.os_patch_level }}
+          ANDROID17_SUBLEVEL: ${{ inputs.sub_level }}
+          ANDROID17_SOURCE_REVISION: ${{ inputs.source_revision }}
+        run: bash "$GITHUB_WORKSPACE/scripts/sync_android17.sh"
 
       # ==================== 初始化并同步内核源码 ====================
       # 使用 repo 工具从 AOSP 获取 GKI 内核源码
       - name: 初始化并同步内核源码
+        if: "!(inputs.android_version == 'android17' && inputs.kernel_version == '6.18')"
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
           # 克隆 GCC 工具链 (用于 5.x 内核)
@@ -692,7 +715,11 @@ jobs:
           # 应用主 SUSFS 补丁到内核
           cd $KERNEL_ROOT/common
           SUSFS_PATCH="50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch"
-          patch -p1 < "$SUSFS_PATCH" || true
+          if [[ "${{ inputs.android_version }}" == "android17" && "${{ inputs.kernel_version }}" == "6.18" ]]; then
+            patch -p1 < "$SUSFS_PATCH"
+          else
+            patch -p1 < "$SUSFS_PATCH" || true
+          fi
 
           # 应用版本特定修复 (所有 KSU 变体)
           if [ "${{ inputs.ksu_variant }}" == "Official" ] || [ "${{ inputs.ksu_variant }}" == "MKSU" ] || [ "${{ inputs.ksu_variant }}" == "Next" ] || [ "${{ inputs.ksu_variant }}" == "SukiSU" ] || [ "${{ inputs.ksu_variant }}" == "BakaSU Pro" ]; then
@@ -901,7 +928,9 @@ jobs:
         if: inputs.use_uni
         working-directory: ${{ env.KERNEL_ROOT }}/common
         run: |
-          if [ "${{ inputs.kernel_version }}" = "5.10" ] || [ "${{ inputs.kernel_version }}" = "5.15" ]; then
+          if [[ "${{ inputs.android_version }}" == "android17" && "${{ inputs.kernel_version }}" == "6.18" ]]; then
+            patch -p1 --forward < "$ACTION_BUILD/patches/unicode_bypass_fix_6.1+.patch"
+          elif [ "${{ inputs.kernel_version }}" = "5.10" ] || [ "${{ inputs.kernel_version }}" = "5.15" ]; then
             patch -p1 --forward < "$ACTION_BUILD/patches/unicode_bypass_fix_6.1-.patch" || true
           else
             patch -p1 --forward < "$ACTION_BUILD/patches/unicode_bypass_fix_6.1+.patch" || true
@@ -1061,7 +1090,9 @@ jobs:
   
           EOF
 
-          sed -i 's/check_defconfig//' ./common/build.config.gki
+          if [[ "${{ inputs.android_version }}" != "android17" || "${{ inputs.kernel_version }}" != "6.18" ]]; then
+            sed -i 's/check_defconfig//' ./common/build.config.gki
+          fi
          
 
       - name: 添加 SUSFS 配置
@@ -1094,11 +1125,21 @@ jobs:
             kernel/manager/apk_sign.c kernel/manager/manager_sign.h
           echo "Using BakaSU Pro native integration; no SELinux source overlay"
 
+      - name: Select BakaSU Tracepoint hooks without SUSFS
+        id: bakasu_tracepoint_setup
+        if: inputs.ksu_variant == 'BakaSU Pro' && !inputs.enable_susfs
+        run: |
+          "$KERNEL_ROOT/common/scripts/config" --file "$DEFCONFIG" \
+            --enable KSU --enable DEBUG_KERNEL --enable KALLSYMS --enable KALLSYMS_ALL \
+            --disable KSU_SUSFS --disable KSU_MANUAL_HOOK --enable KSU_TRACEPOINT_HOOK
+
       # ==================== 配置内核名称 ====================
       - name: 配置内核名称
         working-directory: ${{ env.KERNEL_ROOT }}
         run: |
-          if [ -f "build/build.sh" ]; then
+          if [[ "${{ inputs.android_version }}" == "android17" && "${{ inputs.kernel_version }}" == "6.18" ]]; then
+            echo "Preserving official Android 17 BUILD.bazel; using Kleaf flags instead"
+          elif [ -f "build/build.sh" ]; then
             sed -i 's/-dirty//' ./common/scripts/setlocalversion
           else
             # 配置 6.1+ 内核
@@ -1193,7 +1234,20 @@ jobs:
           #  echo "未找到目标文件，跳过: $f"
           #fi
 
+      - name: Build Android 17 with native Kleaf
+        id: android17_build
+        if: inputs.android_version == 'android17' && inputs.kernel_version == '6.18'
+        uses: nick-fields/retry@v3
+        env:
+          ENABLE_SUSFS: ${{ inputs.enable_susfs }}
+        with:
+          timeout_minutes: 90
+          max_attempts: 2
+          retry_on: timeout
+          command: bash "$GITHUB_WORKSPACE/scripts/build_android17.sh"
+
       - name: 编译内核
+        if: "!(inputs.android_version == 'android17' && inputs.kernel_version == '6.18')"
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 30
@@ -1264,7 +1318,9 @@ jobs:
         run: |
           mkdir -p bootimgs
 
-          if [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
+          if [[ "${{ inputs.android_version }}" == "android17" && "${{ inputs.kernel_version }}" == "6.18" ]]; then
+            SRC_DIR="$KERNEL_ROOT/common/out/arch/arm64/boot"
+          elif [ "${{ inputs.android_version }}" == "android12" ] || [ "${{ inputs.android_version }}" == "android13" ]; then
             SRC_DIR="$KERNEL_ROOT/out/${{ inputs.android_version }}-${{ inputs.kernel_version }}/dist"
           else
             SRC_DIR="$KERNEL_ROOT/bazel-bin/common/kernel_aarch64"
@@ -1317,7 +1373,7 @@ jobs:
       # ==================== 构建 Boot 镜像 (Android 13+) ====================
       # Android 13 及以上版本不需要 ramdisk
       - name: 构建 Boot 镜像 (Android 13+)
-        if: inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15'
+        if: inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15' || inputs.android_version == 'android17'
         working-directory: bootimgs
         run: |
           gzip -n -c -9 ./Image > ./Image.gz
