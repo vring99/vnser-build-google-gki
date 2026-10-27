@@ -1,4 +1,4 @@
-name: 测试构建 - 5.10.236 (BakaSU Pro 35240)
+name: 测试构建 - 5.10.236 (BakaSU Pro 35268)
 
 permissions:
   contents: write
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build-test:
-    name: "5.10.236-android12-2025-05 / BakaSU Pro 35240"
+    name: "5.10.236-android12-2025-05 / BakaSU Pro 35268"
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
@@ -30,7 +30,7 @@ jobs:
       revision: "r4"
       ksu_variant: "BakaSU Pro"
       ksu_branch: "Stable(标准)"
-      bakasu_version: "35240"
+      bakasu_version: "35268"
       version: ""
       build_time: "Sun Dec 01 08:10:00 UTC 2024"
       use_zram: true

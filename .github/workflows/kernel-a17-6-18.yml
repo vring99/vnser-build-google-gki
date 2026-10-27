@@ -12,8 +12,8 @@ on:
         required: false
         type: choice
         options:
-          - "35240"
-        default: "35240"
+          - "35268"
+        default: "35268"
       version:
         description: "自定义版本名 (可选)"
         required: false
@@ -42,7 +42,7 @@ on:
       bakasu_version:
         required: false
         type: string
-        default: "35240"
+        default: "35268"
       version:
         required: false
         type: string
@@ -84,7 +84,7 @@ jobs:
       os_patch_level: ${{ matrix.os_patch_level }}
       ksu_variant: "BakaSU Pro"
       ksu_branch: "Stable(标准)"
-      bakasu_version: ${{ inputs.bakasu_version || '35240' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35268' }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_uni: ${{ inputs.use_uni }}
