@@ -12,7 +12,7 @@ on:
       bakasu_version:
         required: false
         type: string
-        default: "35268"
+        default: "35270"
     outputs:
       susVer:
         description: "The fetched SUSFS version number"
@@ -32,8 +32,8 @@ jobs:
       susVer: ${{ steps.get_version.outputs.sversion }}
     env:
       BAKASU_VERSION: ${{ inputs.bakasu_version }}
-      BAKASU_MANAGER_COMMIT: 54983206d0aa820374144101f8401c85a5ab9a34
-      BAKASU_MANAGER_VERSION: "35268"
+      BAKASU_MANAGER_COMMIT: eb576bf3c3787519c193865169b672ad39895431
+      BAKASU_MANAGER_VERSION: "35270"
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -84,9 +84,9 @@ jobs:
             git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git KernelSU
           elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
             echo "This is the BakaSU Pro variant"
-            git clone --branch codex/bakasu-pro-latest https://github.com/vring99/BakaSU.git KernelSU
+            git clone --branch codex/build-35233 https://github.com/vring99/BakaSU.git KernelSU
             case "$BAKASU_VERSION" in
-              35268) BAKASU_COMMIT=54983206d0aa820374144101f8401c85a5ab9a34 ;;
+              35270) BAKASU_COMMIT=eb576bf3c3787519c193865169b672ad39895431 ;;
               *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
             esac
             git -C KernelSU checkout --detach "$BAKASU_COMMIT"

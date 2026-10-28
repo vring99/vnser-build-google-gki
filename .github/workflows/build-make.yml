@@ -38,8 +38,8 @@ on:
       bakasu_version:
         required: false
         type: string
-        description: "BakaSU Pro version (35268)"
-        default: "35268"
+        description: "BakaSU Pro version (35270)"
+        default: "35270"
 
       # ==================== 可选配置 ====================
       version:
@@ -110,7 +110,7 @@ jobs:
         if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
-            35268) commit=54983206d0aa820374144101f8401c85a5ab9a34 ;;
+            35270) commit=eb576bf3c3787519c193865169b672ad39895431 ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
@@ -593,6 +593,7 @@ jobs:
               ;;
             "BakaSU Pro")
               echo "添加 BakaSU Pro $BAKASU_VERSION..."
+              git clone --branch codex/build-35233 https://github.com/vring99/BakaSU.git KernelSU
               curl -fLSs "https://raw.githubusercontent.com/vring99/BakaSU/$BAKASU_COMMIT/kernel/setup.sh" -o "$RUNNER_TEMP/bakasu-setup.sh"
               bash "$RUNNER_TEMP/bakasu-setup.sh" "$BAKASU_COMMIT"
               if [ "$(git -C KernelSU rev-parse HEAD)" != "$BAKASU_COMMIT" ]; then
@@ -1121,7 +1122,7 @@ jobs:
           test -f "$KSU_SOURCE/kernel/feature/selinux_hide.c"
           git -C "$KSU_SOURCE" diff --exit-code -- kernel/Kbuild \
             kernel/feature/selinux_hide.c kernel/feature/selinux_hide.h kernel/tools/susfs_compat.mk \
-            kernel/compat/susfs_preinit.c kernel/compat/susfs_preinit.h \
+            kernel/preinit/preinit.c kernel/preinit/preinit.h \
             kernel/manager/apk_sign.c kernel/manager/manager_sign.h
           echo "Using BakaSU Pro native integration; no SELinux source overlay"
 

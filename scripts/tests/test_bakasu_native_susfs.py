@@ -11,7 +11,7 @@ GKI = (ROOT / ".github/workflows/build.yml").exists()
 BUILDERS = ("build.yml", "build-make.yml") if GKI else ("Build Kernel OnePlus.yml", "build-kernel-original-make.yml")
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
 SOURCES = ("kernel/Kbuild", "kernel/feature/selinux_hide.c", "kernel/feature/selinux_hide.h",
-           "kernel/compat/susfs_preinit.c", "kernel/compat/susfs_preinit.h",
+           "kernel/preinit/preinit.c", "kernel/preinit/preinit.h",
            "kernel/tools/susfs_compat.mk", "kernel/manager/apk_sign.c", "kernel/manager/manager_sign.h")
 
 class NativePreflightTests(unittest.TestCase):
@@ -54,11 +54,95 @@ class NativePreflightTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "54983206d0aa820374144101f8401c85a5ab9a34"
+        pin = "eb576bf3c3787519c193865169b672ad39895431"
+        for path in SOURCES:
+            subprocess.run(["git", "-C", source, "cat-file", "-e", pin + ":" + path], check=True)
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35268)
+        self.assertEqual(count + 30700, 35270)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
+
+
+    @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
+    def test_setup_uses_private_repo_with_official_default_setup(self):
+        source = os.environ["BAKASU_PRO_TEST_SOURCE"]
+        setup = subprocess.check_output([
+            "git", "-C", source, "show",
+            "eb576bf3c3787519c193865169b672ad39895431:kernel/setup.sh",
+        ])
+        for name in BUILDERS:
+            workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
+            job = next(iter(workflow["jobs"].values()))
+            run = next(s["run"] for s in job["steps"]
+                       if 'bash "$RUNNER_TEMP/bakasu-setup.sh"' in s.get("run", ""))
+            run = run.replace("${{ inputs.ksu_variant }}", "BakaSU Pro")
+            with self.subTest(builder=name), tempfile.TemporaryDirectory() as directory:
+                workspace = Path(directory)
+                remote = workspace / "private-remote"
+                (remote / "kernel").mkdir(parents=True)
+                (remote / "kernel/setup.sh").write_bytes(setup)
+                for args in (["init", "-q", "-b", "codex/build-35233"],
+                             ["-c", "core.autocrlf=false", "add", "."],
+                             ["-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                              "commit", "-qm", "private fixture"]):
+                    subprocess.run(["git", "-C", str(remote), *args], check=True, capture_output=True)
+                pin = subprocess.check_output(["git", "-C", str(remote), "rev-parse", "HEAD"],
+                                              text=True).strip()
+                platform = workspace / "kernel_workspace/kernel_platform"
+                drivers = platform / "common/drivers"
+                drivers.mkdir(parents=True)
+                (drivers / "Makefile").write_text("# fixture\n")
+                (drivers / "Kconfig").write_text('menu "Drivers"\nendmenu\n')
+                configs = platform / "common/arch/arm64/configs"
+                configs.mkdir(parents=True)
+                (configs / "gki_defconfig").touch()
+                temp = workspace / "runner-temp"
+                temp.mkdir()
+                env = dict(os.environ, BAKASU_VERSION="30701", BAKASU_COMMIT=pin,
+                           GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="core.autocrlf",
+                           GIT_CONFIG_VALUE_0="false",
+                           RUNNER_TEMP=temp.as_posix(), TEST_REMOTE=remote.as_posix(),
+                           GITHUB_ENV=(workspace / "env").as_posix(),
+                           GITHUB_OUTPUT=(workspace / "output").as_posix())
+                # Redirect only the external downloads; execute the real setup and Git operations.
+                downloads = r'''
+git() {
+    if [ "$1" = clone ]; then
+        local arg args=() private=false
+        for arg in "$@"; do
+            case "$arg" in
+                https://github.com/vring99/BakaSU|https://github.com/vring99/BakaSU.git)
+                    args+=("$TEST_REMOTE"); private=true ;;
+                https://*) echo "unexpected repository: $arg" >&2; return 89 ;;
+                *) args+=("$arg") ;;
+            esac
+        done
+        "$private" || return 90
+        command git "${args[@]}"
+    else
+        command git "$@"
+    fi
+}
+curl() {
+    case "$*" in
+        *"https://raw.githubusercontent.com/vring99/BakaSU/$BAKASU_COMMIT/kernel/setup.sh"*)
+            command cp "$TEST_REMOTE/kernel/setup.sh" "$RUNNER_TEMP/bakasu-setup.sh" ;;
+        *) return 91 ;;
+    esac
+}
+export -f git curl
+'''
+                result = subprocess.run([BASH, "-e", "-c", downloads + run],
+                                        cwd=platform if GKI else workspace, env=env,
+                                        capture_output=True, text=True, encoding="utf-8")
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                ksu = platform / "KernelSU"
+                actual = subprocess.check_output(["git", "-C", str(ksu), "rev-parse", "HEAD"],
+                                                 text=True).strip()
+                self.assertEqual(actual, pin)
+                self.assertEqual((ksu / "kernel/setup.sh").read_bytes(), setup)
+                self.assertIn("KSUVER=30701", (workspace / "env").read_text())
+                self.assertIn("kernelsu/", (drivers / "Makefile").read_text())
 
 if __name__ == "__main__":
     unittest.main()
