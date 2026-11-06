@@ -1170,7 +1170,8 @@ jobs:
                 KERNEL_LOCAL="-android15-8-g${GHASH}-abogki$((RANDOM % 900000000 + 100000000))-4k"
                 ;;
               "6.12")
-                KERNEL_LOCAL="-android16-5-g${GHASH}-abogki$((RANDOM % 900000000 + 100000000))-4k"
+                KMI_GENERATION=$(python3 "$GITHUB_WORKSPACE/scripts/read_kmi_generation.py" "$KERNEL_ROOT/common")
+                KERNEL_LOCAL="-android16-${KMI_GENERATION}-g${GHASH}-abogki$((RANDOM % 900000000 + 100000000))-4k"
                 ;;
               *)
                 KERNEL_LOCAL="-${{ inputs.android_version }}-g${GHASH}-ab$((RANDOM % 90000000 + 10000000))"
