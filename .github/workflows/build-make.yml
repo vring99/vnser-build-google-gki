@@ -92,7 +92,8 @@ on:
 jobs:
   build-kernel:
     name: "${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.android_version }}-${{ inputs.os_patch_level }}-${{ inputs.ksu_variant }}"
-    runs-on: ubuntu-latest
+    # Ubuntu 26.04 headers break the libbpf bundled with older kernels.
+    runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.android_version == 'android17' && inputs.kernel_version == '6.18' && 120 || 60 }}
 
     # ==================== 环境变量配置 ====================
