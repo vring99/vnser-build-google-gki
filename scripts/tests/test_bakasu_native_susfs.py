@@ -54,11 +54,11 @@ class NativePreflightTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "eb576bf3c3787519c193865169b672ad39895431"
+        pin = "b520233b2552fec39e2adcb6368301281cf13607"
         for path in SOURCES:
             subprocess.run(["git", "-C", source, "cat-file", "-e", pin + ":" + path], check=True)
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35270)
+        self.assertEqual(count + 30700, 35273)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
 
@@ -68,7 +68,7 @@ class NativePreflightTests(unittest.TestCase):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
         setup = subprocess.check_output([
             "git", "-C", source, "show",
-            "eb576bf3c3787519c193865169b672ad39895431:kernel/setup.sh",
+            "b520233b2552fec39e2adcb6368301281cf13607:kernel/setup.sh",
         ])
         for name in BUILDERS:
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
