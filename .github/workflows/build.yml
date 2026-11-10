@@ -924,6 +924,11 @@ jobs:
             fi
           fi
 
+      - name: Fix optional SUSFS credential helper warnings
+        id: susfs_cred_compat
+        if: inputs.enable_susfs
+        run: python3 "$GITHUB_WORKSPACE/scripts/susfs_cred_compat.py" "$KERNEL_ROOT/common"
+
       # ==================== Unicode 绕过修复 ====================
       # 修复 Unicode 零宽字符绕过检测的问题
       - name: 应用 Unicode 绕过修复
