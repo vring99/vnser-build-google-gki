@@ -23,8 +23,8 @@ on:
         required: false
         type: choice
         options:
-          - "35273"
-        default: "35273"
+          - "35275"
+        default: "35275"
       kernelsu_branch:
         description: "KSU 分支"
         required: true
@@ -84,7 +84,7 @@ on:
       bakasu_version:
         required: false
         type: string
-        default: "35273"
+        default: "35275"
       version:
         required: false
         type: string
@@ -177,7 +177,7 @@ jobs:
       os_patch_level: ${{ matrix.os_patch_level }}
       ksu_variant: ${{ inputs.kernelsu_variant }}
       ksu_branch: ${{ inputs.kernelsu_branch }}
-      bakasu_version: ${{ inputs.bakasu_version || '35273' }}
+      bakasu_version: ${{ inputs.bakasu_version || '35275' }}
       version: ${{ inputs.version || '' }}
       build_time: ${{ inputs.build_time || '' }}
       use_zram: ${{ inputs.use_zram }}

@@ -12,7 +12,7 @@ on:
       bakasu_version:
         required: false
         type: string
-        default: "35273"
+        default: "35275"
     outputs:
       susVer:
         description: "The fetched SUSFS version number"
@@ -32,8 +32,8 @@ jobs:
       susVer: ${{ steps.get_version.outputs.sversion }}
     env:
       BAKASU_VERSION: ${{ inputs.bakasu_version }}
-      BAKASU_MANAGER_COMMIT: b520233b2552fec39e2adcb6368301281cf13607
-      BAKASU_MANAGER_VERSION: "35273"
+      BAKASU_MANAGER_COMMIT: b89b9d960ec788460a7a6e4289f869762f306957
+      BAKASU_MANAGER_VERSION: "35275"
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
@@ -86,7 +86,7 @@ jobs:
             echo "This is the BakaSU Pro variant"
             git clone --branch codex/build-35233 https://github.com/vring99/BakaSU.git KernelSU
             case "$BAKASU_VERSION" in
-              35273) BAKASU_COMMIT=b520233b2552fec39e2adcb6368301281cf13607 ;;
+              35275) BAKASU_COMMIT=b89b9d960ec788460a7a6e4289f869762f306957 ;;
               *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
             esac
             git -C KernelSU checkout --detach "$BAKASU_COMMIT"
@@ -111,6 +111,10 @@ jobs:
             KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
           elif [ "${{ inputs.kernelsu_variant }}" == "BakaSU Pro" ]; then
             KSU_VERSION=$((30700 + KSU_GIT_VERSION))
+            if [ "$KSU_VERSION" != "$BAKASU_VERSION" ] || [ "$KSU_VERSION" != "$BAKASU_MANAGER_VERSION" ]; then
+              echo "::error::BakaSU Pro kernel/manager version does not match selected $BAKASU_VERSION"
+              exit 1
+            fi
           elif [ "${{ inputs.kernelsu_variant }}" == "Official" ] || [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             KSU_VERSION=$((20000 + KSU_GIT_VERSION))
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then

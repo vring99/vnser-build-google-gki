@@ -1,6 +1,7 @@
 """Run the native preflight without allowing it to rewrite BakaSU sources."""
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -54,13 +55,30 @@ class NativePreflightTests(unittest.TestCase):
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
     def test_private_pin_version_and_certificate(self):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
-        pin = "b520233b2552fec39e2adcb6368301281cf13607"
+        pin = "b89b9d960ec788460a7a6e4289f869762f306957"
         for path in SOURCES:
             subprocess.run(["git", "-C", source, "cat-file", "-e", pin + ":" + path], check=True)
         count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
-        self.assertEqual(count + 30700, 35273)
+        self.assertEqual(count + 30700, 35275)
         get = lambda rev: subprocess.check_output(["git", "-C", source, "show", rev + ":kernel/manager/manager_sign.h"])
         self.assertEqual(get(pin), get("883617cdef3ee3ffa682ef501e43b9d266ec891d"))
+
+    @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
+    def test_private_kernel_and_manager_release_floor(self):
+        source = os.environ["BAKASU_PRO_TEST_SOURCE"]
+        pin = "b89b9d960ec788460a7a6e4289f869762f306957"
+        get = lambda path: subprocess.check_output(
+            ["git", "-C", source, "show", pin + ":" + path], text=True, encoding="utf-8")
+        kbuild = get("kernel/Kbuild")
+        manager = get("manager/build.gradle.kts")
+        floor = re.search(r'extra\["managerVersionCode"\] = maxOf\((\d+), 30000 \+ getGitCommitCount\(\) \+ 700\)', manager)
+        self.assertIsNotNone(floor)
+        self.assertEqual(int(floor[1]), 35275)
+        self.assertIn("KSU_VERSION := $(shell expr 30000 + $(KSU_LOCAL_VERSION) + 700)", kbuild)
+        self.assertIn("KSU_VERSION := $(shell if [ $(KSU_VERSION) -lt 35275 ]; then echo 35275; else echo $(KSU_VERSION); fi)", kbuild)
+        self.assertIn("%@BakaSUPro", kbuild)
+        count = int(subprocess.check_output(["git", "-C", source, "rev-list", "--count", pin]))
+        self.assertEqual(max(count + 30700, int(floor[1])), 35275)
 
 
     @unittest.skipUnless(os.environ.get("BAKASU_PRO_TEST_SOURCE"), "private source not supplied")
@@ -68,7 +86,7 @@ class NativePreflightTests(unittest.TestCase):
         source = os.environ["BAKASU_PRO_TEST_SOURCE"]
         setup = subprocess.check_output([
             "git", "-C", source, "show",
-            "b520233b2552fec39e2adcb6368301281cf13607:kernel/setup.sh",
+            "b89b9d960ec788460a7a6e4289f869762f306957:kernel/setup.sh",
         ])
         for name in BUILDERS:
             workflow = yaml.safe_load((ROOT / ".github/workflows" / name).read_text(encoding="utf-8"))
