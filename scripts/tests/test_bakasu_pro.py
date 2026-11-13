@@ -1,5 +1,6 @@
 """Contracts for the private BakaSU Pro build integration."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -81,6 +82,31 @@ class ProWorkflowTests(unittest.TestCase):
         self.assertIn("build-private-manager.yml", runs)
         self.assertIn("head_sha=$BAKASU_MANAGER_COMMIT", runs)
         self.assertNotIn("Baka-SU/BakaSU", runs)
+
+    def test_fixed_native_kernel_version_ignores_commit_count(self):
+        for name in BUILDERS:
+            job = next(iter(read(name)["jobs"].values()))
+            runs = "\n".join(s.get("run", "") for s in job["steps"])
+            block = re.search(
+                r'(?m)^[ \t]*KSU_VERSION=\$\(sed [^\n]*\)\n'
+                r'[ \t]*if \[ "\$KSU_VERSION" != "\$BAKASU_VERSION" \]; then\n'
+                r'(?:[^\n]*\n)*?[ \t]*fi', runs)
+            self.assertIsNotNone(block, name)
+            fixtures = ("KSU_VERSION := 35275\n", "KSU_VERSION := 35278\n",
+                        "", "KSU_VERSION := $(shell expr 30000 + 4578 + 700)\n",
+                        "KSU_VERSION := 35275\nKSU_VERSION := 35278\n")
+            for source in fixtures:
+                with self.subTest(builder=name, source=source), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    (root / "kernel").mkdir()
+                    (root / "kernel/Kbuild").write_text(source)
+                    script = 'git() { echo "unexpected commit-count query" >&2; return 91; }\n'
+                    result = subprocess.run(
+                        [BASH, "-e", "-c", script + block[0]], cwd=root,
+                        env=dict(os.environ, BAKASU_VERSION="35275"),
+                        capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 0 if source == fixtures[0] else 1,
+                                     result.stdout + result.stderr)
 
     def test_all_family_matrix_preserved(self):
         name = "kernel-bakasu-35226.yml" if GKI else "Build Kernel OnePlus-35226.yml"
