@@ -12,6 +12,7 @@ GKI = (WF / "build.yml").exists()
 BUILDERS = ("build.yml", "build-make.yml") if GKI else ("Build Kernel OnePlus.yml", "build-kernel-original-make.yml")
 INPUT = "bakasu_version" if GKI else "BAKASU_VERSION"
 PIN = "b89b9d960ec788460a7a6e4289f869762f306957"
+KERNEL_PIN = "72ee6a627d72d623f46e2833114b57d02dadd8aa"
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
 
 def read(name):
@@ -41,7 +42,7 @@ class ProWorkflowTests(unittest.TestCase):
             job = next(iter(read(name)["jobs"].values()))
             runs = "\n".join(s.get("run", "") for s in job["steps"])
             self.assertIn("raw.githubusercontent.com/vring99/BakaSU/$BAKASU_COMMIT/kernel/setup.sh", runs)
-            self.assertIn(PIN, runs)
+            self.assertIn(KERNEL_PIN, runs)
             self.assertNotIn("SUSFS_KSU_COMMIT", job.get("env", {}))
             step = next(s for s in job["steps"] if s.get("id") == "bakasu_susfs_setup")
             for forbidden in ("curl ", "cp ", "git apply", "path.write", "Please wait susfs update"):
@@ -67,7 +68,7 @@ class ProWorkflowTests(unittest.TestCase):
                         env=dict(os.environ, BAKASU_VERSION=version, GITHUB_ENV=path.as_posix()))
                     self.assertEqual(result.returncode == 0, version == "35275", result.stderr)
                     if version == "35275":
-                        self.assertEqual(path.read_text().strip(), "BAKASU_COMMIT=" + PIN)
+                        self.assertEqual(path.read_text().strip(), "BAKASU_COMMIT=" + KERNEL_PIN)
 
     @unittest.skipUnless(GKI, "GKI manager workflow only")
     def test_manager_uses_private_signed_artifact(self):
