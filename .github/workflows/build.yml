@@ -111,7 +111,7 @@ jobs:
         if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
-            35275) commit=72ee6a627d72d623f46e2833114b57d02dadd8aa ;;
+            35275) commit=0f0eb9bca8d8d48e7dfee8c393efa14d8d5bb45b ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
