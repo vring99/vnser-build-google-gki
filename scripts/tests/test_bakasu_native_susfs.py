@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GKI = (ROOT / ".github/workflows/build.yml").exists()
 BUILDERS = ("build.yml", "build-make.yml") if GKI else ("Build Kernel OnePlus.yml", "build-kernel-original-make.yml")
 BASH = os.environ.get("BAKASU_TEST_BASH", "bash")
-PIN = "0f0eb9bca8d8d48e7dfee8c393efa14d8d5bb45b"
+PIN = "60dd965f5f4923d34e9df4afb8f95a923447f7b4"
 SOURCES = ("kernel/Kbuild", "kernel/feature/selinux_hide.c", "kernel/feature/selinux_hide.h",
            "kernel/preinit/preinit.c", "kernel/preinit/preinit.h",
            "kernel/tools/susfs_compat.mk", "kernel/manager/apk_sign.c", "kernel/manager/manager_sign.h")

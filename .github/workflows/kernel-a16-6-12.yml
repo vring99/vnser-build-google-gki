@@ -136,6 +136,9 @@ jobs:
           - sub_level: "23"
             os_patch_level: "2025-06"
             source_revision: "r58"
+          - sub_level: "38"
+            os_patch_level: "2025-08"
+            source_revision: "r26"
 
     uses: ./.github/workflows/build-make.yml
     secrets: inherit
