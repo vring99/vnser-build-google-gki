@@ -111,7 +111,7 @@ jobs:
         if: inputs.ksu_variant == 'BakaSU Pro'
         run: |
           case "$BAKASU_VERSION" in
-            35275) commit=b89b9d960ec788460a7a6e4289f869762f306957 ;;
+            35275) commit=60dd965f5f4923d34e9df4afb8f95a923447f7b4 ;;
             *) echo "::error::Unsupported BakaSU Pro version: $BAKASU_VERSION"; exit 1 ;;
           esac
           echo "BAKASU_COMMIT=$commit" >> "$GITHUB_ENV"
@@ -601,9 +601,8 @@ jobs:
               fi
               echo 'CONFIG_KSU_FULL_NAME_FORMAT="%TAG_NAME%-%COMMIT_SHA%@vring"' >> ./common/arch/arm64/configs/gki_defconfig
               cd ./KernelSU
-              # 使用实际检出的提交计数，避免 main 更新导致产物版本号漂移
-              KSU_GIT_VERSION=$(git rev-list --count HEAD)
-              KSU_VERSION=$((KSU_GIT_VERSION + 30700))
+              # Read the native release version; maintenance commits keep 35275.
+              KSU_VERSION=$(sed -nE 's/^KSU_VERSION[[:space:]]*:=[[:space:]]*([0-9]+)[[:space:]]*$/\1/p' kernel/Kbuild)
               if [ "$KSU_VERSION" != "$BAKASU_VERSION" ]; then
                 echo "::error::BakaSU Pro version $KSU_VERSION does not match selected $BAKASU_VERSION"
                 exit 1
